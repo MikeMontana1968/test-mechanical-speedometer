@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "config.h"
+#include "version.h"
 #include "classes/SpeedometerWheel.h"
 #include "classes/GearIndicator.h"
 #include "classes/RPMHandler.h"
@@ -9,7 +10,10 @@ SpeedometerWheel speedometer;
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("Mechanical Speedometer Demo Starting...");
+  Serial.println("=== Mechanical Speedometer Demo ===");
+  Serial.print("Version: ");
+  Serial.println(VERSION_STRING);
+  Serial.println("Starting system initialization...");
 
   gearIndicator.begin();
   speedometer.begin();

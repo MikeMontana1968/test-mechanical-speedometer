@@ -2,6 +2,7 @@
 #define SPEEDOMETER_WHEEL_H
 
 #include <Stepper.h>
+#include <cmath>
 #include "config.h"
 
 class SpeedometerWheel {

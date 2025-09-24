@@ -8,7 +8,10 @@
       "Bash(git push:*)",
       "Bash(git branch:*)",
       "Bash(git remote add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(pio run:*)",
+      "Bash(chmod:*)",
+      "Bash(python scripts/bump_version.py:*)"
     ],
     "deny": [],
     "ask": []

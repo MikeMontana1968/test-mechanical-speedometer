@@ -31,7 +31,6 @@ private:
     // Conversion constants
     static constexpr float INCHES_PER_MILE = 63360.0f;
     static constexpr float MINUTES_PER_HOUR = 60.0f;
-    static constexpr float PI = 3.14159265f;
 
     // Helper methods
     Gear calculateOptimalGear(float engineRPM, float driveshaftRPM);

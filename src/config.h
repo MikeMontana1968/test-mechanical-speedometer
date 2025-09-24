@@ -19,10 +19,10 @@ enum Gear {
 };
 
 // Gear angle lookup (in degrees)
-const int GEAR_ANGLES[] = {0, 15, 30, 45, 60};
+extern const int GEAR_ANGLES[5];
 
 // Gear string lookup
-const char* GEAR_NAMES[] = {"Reverse", "Neutral", "1", "2", "3"};
+extern const char* GEAR_NAMES[5];
 
 // Speedometer Stepper Motor Definitions
 #define STEPPER_PIN_1 19  // GPIO 19 - Stepper motor pin 1
