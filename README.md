@@ -48,6 +48,18 @@ Manages stepper motor speedometer:
 - Speed range: 0-90 MPH with 2048 steps per revolution
 - Shortest-path rotation logic for efficient movement
 
+## Hardware Photos
+
+### CAN Bus Interface View
+![CAN Bus Interface](docs/can-view.JPG)
+*CAN bus interface components and connections for reading engine RPM data*
+
+### Servo Mechanism View
+![Servo Gear Indicator](docs/servo-view.JPG)
+*Servo-driven gear position indicator mechanism showing physical implementation*
+
+> **📋 Technical Details**: Complete wiring diagrams and connection tables are available in [docs/wiring-diagram.md](docs/wiring-diagram.md). For Fritzing diagrams and PCB layouts, see [docs/fritzing-parts-list.md](docs/fritzing-parts-list.md).
+
 ## Pin Configuration
 
 ```cpp
