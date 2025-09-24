@@ -2,18 +2,25 @@
 #include <Arduino.h>
 
 SpeedometerWheel::SpeedometerWheel()
-    : stepper(STEPS_PER_REVOLUTION, STEPPER_PIN_1, STEPPER_PIN_3, STEPPER_PIN_2, STEPPER_PIN_4),
-      currentPosition(0),
-      homeStartPosition(0),
-      homeEndPosition(0),
-      homeMarkerWidth(0),
-      isCalibrated(false) {
+	: stepper(STEPS_PER_REVOLUTION, STEPPER_PIN_1, STEPPER_PIN_3, STEPPER_PIN_2, STEPPER_PIN_4),
+	  currentPosition(0),
+	  targetPosition(0),
+	  homeStartPosition(0),
+	  homeEndPosition(0),
+	  homeMarkerWidth(0),
+	  isCalibrated(false),
+	  isMoving(false),
+	  transitionStartTime(0),
+	  currentPositionFloat(0.0),
+	  startPositionFloat(0.0),
+	  targetPositionFloat(0.0) {
 }
 
 void SpeedometerWheel::begin() {
     pinMode(ENDSTOP_PIN, INPUT_PULLUP);
     stepper.setSpeed(STEPPER_RPM);
     currentPosition = 0;
+    currentPositionFloat = 0.0;
 }
 
 bool SpeedometerWheel::readEndstop() {
@@ -111,22 +118,34 @@ void SpeedometerWheel::moveToMPH(int mph) {
     // Calculate target position
     int targetSteps = stepsFromHome(mph);
     int homeCenter = (homeStartPosition + homeMarkerWidth / 2) % STEPS_PER_REVOLUTION;
-    int targetPosition = (homeCenter + targetSteps) % STEPS_PER_REVOLUTION;
+    targetPosition = (homeCenter + targetSteps) % STEPS_PER_REVOLUTION;
 
-    // Calculate shortest path
-    int stepsToMove = (targetPosition - currentPosition + STEPS_PER_REVOLUTION) % STEPS_PER_REVOLUTION;
-    if (stepsToMove > STEPS_PER_REVOLUTION / 2) {
-        stepsToMove -= STEPS_PER_REVOLUTION;  // Go the shorter way
+    // If already at target, do nothing
+    if (abs(targetPosition - (int)round(currentPositionFloat)) < 2) {
+        return;
     }
 
-    Serial.print("Moving to ");
-    Serial.print(mph);
-    Serial.print(" MPH (");
-    Serial.print(stepsToMove);
-    Serial.println(" steps)");
+    // Start smooth transition
+    startPositionFloat = currentPositionFloat;
+    targetPositionFloat = targetPosition;
 
-    stepper.step(stepsToMove);
-    currentPosition = targetPosition;
+    // Handle wrap-around for shortest path
+    if (abs(targetPositionFloat - startPositionFloat) > STEPS_PER_REVOLUTION / 2) {
+        if (targetPositionFloat > startPositionFloat) {
+            targetPositionFloat -= STEPS_PER_REVOLUTION;
+        } else {
+            targetPositionFloat += STEPS_PER_REVOLUTION;
+        }
+    }
+
+    transitionStartTime = millis();
+    isMoving = true;
+
+    Serial.print("Starting transition to ");
+    Serial.print(mph);
+    Serial.print(" MPH (target position: ");
+    Serial.print(targetPosition);
+    Serial.println(")");
 }
 
 bool SpeedometerWheel::homeWheel() {
@@ -168,4 +187,113 @@ int SpeedometerWheel::shortestPathToHome() {
     }
 
     return stepsToMove;
+}
+
+void SpeedometerWheel::update() {
+    if (!isCalibrated || !isMoving) {
+        return;
+    }
+
+    unsigned long currentTime = millis();
+    unsigned long elapsed = currentTime - transitionStartTime;
+
+    if (elapsed >= SPEED_TRANSITION_TIME_MS) {
+        // Transition complete
+        currentPositionFloat = targetPositionFloat;
+
+        // Handle wrap-around
+        while (currentPositionFloat >= STEPS_PER_REVOLUTION) {
+            currentPositionFloat -= STEPS_PER_REVOLUTION;
+        }
+        while (currentPositionFloat < 0) {
+            currentPositionFloat += STEPS_PER_REVOLUTION;
+        }
+
+        currentPosition = (int)round(currentPositionFloat);
+        isMoving = false;
+
+        Serial.print("Speed transition complete. Position: ");
+        Serial.print(currentPosition);
+        Serial.print(" (");
+        Serial.print(getCurrentMPH());
+        Serial.println(" MPH)");
+    } else {
+        // Calculate interpolated position
+        float progress = (float)elapsed / (float)SPEED_TRANSITION_TIME_MS;
+        float easedProgress = easeInOutCubic(progress);
+        currentPositionFloat = startPositionFloat + (targetPositionFloat - startPositionFloat) * easedProgress;
+    }
+
+    updateStepperPosition();
+}
+
+float SpeedometerWheel::easeInOutCubic(float t) {
+    // Smooth easing function that starts slow, accelerates, then slows down
+    if (t < 0.5f) {
+        return 4.0f * t * t * t;
+    } else {
+        float f = (2.0f * t - 2.0f);
+        return 1.0f + f * f * f / 2.0f;
+    }
+}
+
+void SpeedometerWheel::updateStepperPosition() {
+    int targetSteps = (int)round(currentPositionFloat);
+
+    // Handle wrap-around
+    while (targetSteps >= STEPS_PER_REVOLUTION) {
+        targetSteps -= STEPS_PER_REVOLUTION;
+    }
+    while (targetSteps < 0) {
+        targetSteps += STEPS_PER_REVOLUTION;
+    }
+
+    int stepsToMove = shortestPath(currentPosition, targetSteps);
+
+    if (stepsToMove != 0) {
+        stepper.step(stepsToMove);
+        currentPosition = targetSteps;
+    }
+}
+
+int SpeedometerWheel::shortestPath(int from, int to) {
+    int diff = (to - from + STEPS_PER_REVOLUTION) % STEPS_PER_REVOLUTION;
+    if (diff > STEPS_PER_REVOLUTION / 2) {
+        diff -= STEPS_PER_REVOLUTION;
+    }
+    return diff;
+}
+
+int SpeedometerWheel::getCurrentMPH() const {
+    if (!isCalibrated) {
+        return 0;
+    }
+
+    int homeCenter = (homeStartPosition + homeMarkerWidth / 2) % STEPS_PER_REVOLUTION;
+    int currentPos = (int)round(currentPositionFloat);
+    while (currentPos >= STEPS_PER_REVOLUTION) currentPos -= STEPS_PER_REVOLUTION;
+    while (currentPos < 0) currentPos += STEPS_PER_REVOLUTION;
+
+    int stepsFromHomeCenter = (currentPos - homeCenter + STEPS_PER_REVOLUTION) % STEPS_PER_REVOLUTION;
+    if (stepsFromHomeCenter > STEPS_PER_REVOLUTION / 2) {
+        stepsFromHomeCenter -= STEPS_PER_REVOLUTION;
+    }
+
+    int stepsFromZero = stepsFromHomeCenter - ZERO_MPH_OFFSET;
+    return constrain(stepsFromZero / STEPS_PER_MPH, MIN_SPEED_MPH, MAX_SPEED_MPH);
+}
+
+int SpeedometerWheel::getTargetMPH() const {
+    if (!isCalibrated) {
+        return 0;
+    }
+
+    int homeCenter = (homeStartPosition + homeMarkerWidth / 2) % STEPS_PER_REVOLUTION;
+    int stepsFromHomeCenter = (targetPosition - homeCenter + STEPS_PER_REVOLUTION) % STEPS_PER_REVOLUTION;
+    if (stepsFromHomeCenter > STEPS_PER_REVOLUTION / 2) {
+        stepsFromHomeCenter -= STEPS_PER_REVOLUTION;
+    }
+
+    int stepsFromZero = stepsFromHomeCenter - ZERO_MPH_OFFSET;
+    return constrain(stepsFromZero / STEPS_PER_MPH, MIN_SPEED_MPH, MAX_SPEED_MPH);
 }

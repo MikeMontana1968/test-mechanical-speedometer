@@ -2,7 +2,14 @@
 #include <Arduino.h>
 
 GearIndicator::GearIndicator()
-    : currentGear(NEUTRAL), isInitialized(false) {
+	: currentGear(NEUTRAL),
+	  targetGear(NEUTRAL),
+	  isInitialized(false),
+	  isMoving(false),
+	  transitionStartTime(0),
+	  currentAngle(GEAR_ANGLES[NEUTRAL]),
+	  startAngle(GEAR_ANGLES[NEUTRAL]),
+	  targetAngle(GEAR_ANGLES[NEUTRAL]) {
 }
 
 void GearIndicator::begin() {
@@ -10,8 +17,9 @@ void GearIndicator::begin() {
     gearServo.setPeriodHertz(50);  // Standard 50Hz servo frequency
     gearServo.attach(SERVO_PIN, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
 
-    // Initialize to neutral position
-    setGear(NEUTRAL);
+    // Initialize to neutral position immediately (no easing on startup)
+    currentAngle = GEAR_ANGLES[NEUTRAL];
+    gearServo.write(currentAngle);
     isInitialized = true;
 
     Serial.println("Gear indicator initialized");
@@ -32,17 +40,23 @@ void GearIndicator::setGear(Gear gear) {
         return;
     }
 
-    currentGear = gear;
-    int targetAngle = GEAR_ANGLES[gear];
+    // If already at target gear, do nothing
+    if (gear == targetGear) {
+        return;
+    }
 
-    Serial.print("Setting gear to: ");
+    // Start transition
+    targetGear = gear;
+    startAngle = currentAngle;
+    targetAngle = GEAR_ANGLES[gear];
+    transitionStartTime = millis();
+    isMoving = true;
+
+    Serial.print("Starting transition to gear: ");
     Serial.print(GEAR_NAMES[gear]);
     Serial.print(" (");
     Serial.print(targetAngle);
     Serial.println(" degrees)");
-
-    gearServo.write(targetAngle);
-    delay(500);  // Allow time for servo to reach position
 }
 
 void GearIndicator::setGear(int gearIndex) {
@@ -55,6 +69,47 @@ void GearIndicator::setGear(int gearIndex) {
     }
 }
 
+void GearIndicator::update() {
+    if (!isInitialized || !isMoving) {
+        return;
+    }
+
+    unsigned long currentTime = millis();
+    unsigned long elapsed = currentTime - transitionStartTime;
+
+    if (elapsed >= GEAR_TRANSITION_TIME_MS) {
+        // Transition complete
+        currentAngle = targetAngle;
+        currentGear = targetGear;
+        isMoving = false;
+
+        Serial.print("Gear transition complete: ");
+        Serial.println(GEAR_NAMES[currentGear]);
+    } else {
+        // Calculate interpolated position
+        float progress = (float)elapsed / (float)GEAR_TRANSITION_TIME_MS;
+        float easedProgress = easeInOutCubic(progress);
+        currentAngle = startAngle + (targetAngle - startAngle) * easedProgress;
+    }
+
+    updateServoPosition();
+}
+
+float GearIndicator::easeInOutCubic(float t) {
+    // Smooth easing function that starts slow, accelerates, then slows down
+    // t is between 0.0 and 1.0
+    if (t < 0.5f) {
+        return 4.0f * t * t * t;
+    } else {
+        float f = (2.0f * t - 2.0f);
+        return 1.0f + f * f * f / 2.0f;
+    }
+}
+
+void GearIndicator::updateServoPosition() {
+    gearServo.write(currentAngle);
+}
+
 void GearIndicator::testSequence() {
     if (!isInitialized) {
         Serial.println("Error: Gear indicator not initialized. Call begin() first.");
@@ -62,14 +117,26 @@ void GearIndicator::testSequence() {
     }
 
     Serial.println("Starting gear indicator test sequence...");
+    Serial.println("Note: Call update() regularly in your main loop to see smooth transitions");
 
-    // Cycle through all gears
+    // Cycle through all gears (transitions will be handled by update() method)
     for (int i = REVERSE; i <= GEAR_3; i++) {
         setGear(static_cast<Gear>(i));
-        delay(1000);  // Hold each position for 1 second
+
+        // Wait for transition to complete
+        while (isInTransition()) {
+            update();
+            delay(10);  // Small delay for smooth animation
+        }
+        delay(500);  // Hold position briefly
     }
 
     // Return to neutral
     setGear(NEUTRAL);
+    while (isInTransition()) {
+        update();
+        delay(10);
+    }
+
     Serial.println("Gear indicator test sequence complete");
 }
