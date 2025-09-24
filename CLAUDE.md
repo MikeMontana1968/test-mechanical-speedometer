@@ -1,0 +1,4 @@
+- Microcontroller shall be ESP32 Development Board Integrated 0.96 Inch OLED Display,CH340 Driver,WiFi+BLE Wireless Module
+- Hardware: MakerHawk 6pcs Optical Endstop With 1M Cable Switch Sensor Photoelectric Light Control Limit Switch Modul
+- hardware: 28BYJ-48 ULN2003 5V Stepper Motor + ULN2003 Driver Board
+- hardware: DM-S0020 2.1g Ultra-Micro Servo Coreless Motor 2g Digital Servo with JR Connector
