@@ -13,18 +13,39 @@ GearIndicator::GearIndicator()
 }
 
 void GearIndicator::begin() {
+    Serial.println("Initializing gear indicator servo...");
+    Serial.print("Servo pin: GPIO ");
+    Serial.println(SERVO_PIN);
+
     // Configure servo with custom pulse width range for better precision
     gearServo.setPeriodHertz(50);  // Standard 50Hz servo frequency
-    gearServo.attach(SERVO_PIN, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
+
+    if (gearServo.attach(SERVO_PIN, SERVO_MIN_PULSE, SERVO_MAX_PULSE)) {
+        Serial.println("Servo attached successfully");
+    } else {
+        Serial.println("ERROR: Servo attach failed!");
+        return;
+    }
 
     // Initialize to neutral position immediately (no easing on startup)
     currentAngle = GEAR_ANGLES[NEUTRAL];
+    targetGear = NEUTRAL;
+    currentGear = NEUTRAL;
+
+    Serial.print("Setting servo to neutral angle: ");
+    Serial.print(currentAngle);
+    Serial.println(" degrees");
+
     gearServo.write(currentAngle);
+    delay(100);  // Give servo time to move
+
     isInitialized = true;
 
-    Serial.println("Gear indicator initialized");
+    Serial.println("Gear indicator initialized successfully");
     Serial.print("Starting gear: ");
     Serial.println(getCurrentGearName());
+    Serial.print("Current servo angle: ");
+    Serial.println(currentAngle);
 }
 
 void GearIndicator::setGear(Gear gear) {
@@ -107,7 +128,22 @@ float GearIndicator::easeInOutCubic(float t) {
 }
 
 void GearIndicator::updateServoPosition() {
+    if (!isInitialized) {
+        Serial.println("ERROR: Servo not initialized in updateServoPosition()");
+        return;
+    }
+
     gearServo.write(currentAngle);
+
+    // Debug output every 100ms during transitions
+    static unsigned long lastDebugTime = 0;
+    unsigned long now = millis();
+    if (now - lastDebugTime > 100 && isMoving) {
+        Serial.print("Servo angle: ");
+        Serial.print(currentAngle);
+        Serial.println(" degrees");
+        lastDebugTime = now;
+    }
 }
 
 void GearIndicator::testSequence() {
@@ -139,4 +175,49 @@ void GearIndicator::testSequence() {
     }
 
     Serial.println("Gear indicator test sequence complete");
+}
+
+void GearIndicator::testServoOutput() {
+    if (!isInitialized) {
+        Serial.println("Error: Gear indicator not initialized. Call begin() first.");
+        return;
+    }
+
+    Serial.println("=== SERVO OUTPUT TEST FOR SCOPE VERIFICATION ===");
+    Serial.println("This will output specific angles for scope measurement");
+
+    // Test each gear position with clear debug output
+    int testAngles[] = {0, 15, 30, 45, 60};
+    const char* testNames[] = {"Reverse", "Neutral", "1st Gear", "2nd Gear", "3rd Gear"};
+
+    for (int i = 0; i < 5; i++) {
+        Serial.print("Setting servo to ");
+        Serial.print(testAngles[i]);
+        Serial.print(" degrees (");
+        Serial.print(testNames[i]);
+        Serial.println(")");
+
+        // Set servo position directly
+        gearServo.write(testAngles[i]);
+        currentAngle = testAngles[i];
+
+        Serial.println(">>> Check scope now! PWM should be active on GPIO 18 <<<");
+        delay(3000);  // 3 seconds to observe on scope
+    }
+
+    // Test extreme positions for pulse width verification
+    Serial.println("\nTesting minimum angle (0 degrees):");
+    gearServo.write(0);
+    delay(2000);
+
+    Serial.println("Testing maximum angle (180 degrees):");
+    gearServo.write(180);
+    delay(2000);
+
+    // Return to neutral
+    Serial.println("Returning to neutral (15 degrees):");
+    gearServo.write(15);
+    currentAngle = 15;
+
+    Serial.println("=== SERVO OUTPUT TEST COMPLETE ===");
 }

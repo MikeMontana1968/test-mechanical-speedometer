@@ -79,10 +79,15 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
    │   │      │   │             │ │IN3  │  │   Stepper   │   │◄─── GPIO 22
    │   └──────┘   │             │ │IN4  │  │             │   │◄─── GPIO 23
    │              │             │ │5V   │  │             │   │◄─── 5V
-   │ Red    ──────┼─────────────┼─┤GND  │  └─────────────┘   │◄─── GND
-   │ Orange ──────┼─── GPIO 18  │ └─────┘                   │
-   │ Brown  ──────┼─── GND      │                           │
-   └──────────────┘             └─────────────────────────────┘
+   │ ┌──────────┐ │             │ │GND  │  └─────────────┘   │◄─── GND
+   │ │ ●   ●  ● │ │             │ └─────┘                   │
+   │ └──────────┘ │             └─────────────────────────────┘
+   │  1   2  3    │               3-Pin RC Servo Connector
+   │  │   │  │    │               Pin 1: Brown/Black (GND)
+   │  │   │  └────┼─── GPIO 18    Pin 2: Red (5V Power)
+   │  │   └───────┼─── 5V         Pin 3: Orange/Yellow (Signal)
+   │  └───────────┼─── GND
+   └──────────────┘
                                               │
                         ┌─────────────────────┘
                         │ Speedometer Needle Assembly
@@ -128,18 +133,44 @@ ESP32 3.3V Output:
 ```
 
 ### 2. Servo Motor (Gear Indicator)
+
+#### RC Servo Connector Pinout (Standard 3-Pin JR/Futaba)
+```
+DM-S0020 Servo Connector (viewed from wire side):
+┌─────────────────┐
+│ ●     ●     ●   │  ← 3-pin connector
+└─────────────────┘
+  1     2     3
+
+Pin 1 (Brown/Black): Ground (GND)
+Pin 2 (Red):         Power (VCC) - 4.8V to 6V, typically 5V
+Pin 3 (Orange/Yellow/White): Signal (PWM) - 1-2ms pulse width, 50Hz
+
+Wire Color Standards:
+├── Standard Colors:    Brown  | Red | Orange
+├── Alternative Colors: Black  | Red | Yellow
+└── Some Servos:        Black  | Red | White
+```
+
+#### ESP32 Connections
 ```
 DM-S0020 Servo → ESP32:
-├── Red wire    → 5V power rail
-├── Orange wire → GPIO 18 (PWM signal)
-└── Brown wire  → Ground rail
+├── Pin 1 (Brown/Black) → Ground rail
+├── Pin 2 (Red)         → 5V power rail
+└── Pin 3 (Orange)      → GPIO 18 (PWM signal)
+
+Signal Specifications:
+├── PWM Frequency: 50Hz (20ms period)
+├── Pulse Width Range: 1.0ms to 2.0ms
+├── Center Position: 1.5ms pulse width
+└── Voltage Level: 3.3V logic (ESP32 output)
 
 Position Range: 0° to 60° (5 positions)
-├── 0°  → Reverse
-├── 15° → Neutral
-├── 30° → 1st Gear
-├── 45° → 2nd Gear
-└── 60° → 3rd Gear
+├── 0°  → Reverse    (1.0ms pulse)
+├── 15° → Neutral    (1.125ms pulse)
+├── 30° → 1st Gear   (1.25ms pulse)
+├── 45° → 2nd Gear   (1.375ms pulse)
+└── 60° → 3rd Gear   (1.5ms pulse)
 ```
 
 ### 3. Stepper Motor (Speedometer)

@@ -4,10 +4,9 @@
 // GPIO Pin Definitions
 #define SERVO_PIN 18  // GPIO 18 - PWM capable pin for servo control
 
-// OLED Display Settings (typical for ESP32 with integrated OLED)
-#define OLED_SDA 4    // GPIO 4 - SDA pin for I2C
-#define OLED_SCL 15   // GPIO 15 - SCL pin for I2C
-#define OLED_RST 16   // GPIO 16 - Reset pin for OLED
+// OLED Display Settings - using default I2C pins like working project
+// Default I2C pins: SDA=21, SCL=22 (ESP32 defaults)
+// No explicit pin definitions needed - Wire library uses defaults
 
 // Gear Selection Definitions
 enum Gear {
@@ -24,11 +23,11 @@ extern const int GEAR_ANGLES[5];
 // Gear string lookup
 extern const char* GEAR_NAMES[5];
 
-// Speedometer Stepper Motor Definitions
-#define STEPPER_PIN_1 19  // GPIO 19 - Stepper motor pin 1
-#define STEPPER_PIN_2 21  // GPIO 21 - Stepper motor pin 2
-#define STEPPER_PIN_3 22  // GPIO 22 - Stepper motor pin 3
-#define STEPPER_PIN_4 23  // GPIO 23 - Stepper motor pin 4
+// Speedometer Stepper Motor Definitions (moved to avoid I2C conflict)
+#define STEPPER_PIN_1 25  // GPIO 25 - Stepper motor pin 1
+#define STEPPER_PIN_2 26  // GPIO 26 - Stepper motor pin 2
+#define STEPPER_PIN_3 27  // GPIO 27 - Stepper motor pin 3
+#define STEPPER_PIN_4 32  // GPIO 32 - Stepper motor pin 4
 #define ENDSTOP_PIN 5     // GPIO 5 - Optical endstop sensor
 
 // Speedometer Range Configuration

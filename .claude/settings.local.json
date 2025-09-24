@@ -11,7 +11,10 @@
       "Bash(git commit:*)",
       "Bash(pio run:*)",
       "Bash(chmod:*)",
-      "Bash(python scripts/bump_version.py:*)"
+      "Bash(python scripts/bump_version.py:*)",
+      "Bash(pio device monitor:*)",
+      "Read(//c/Users/mikem/OneDrive/Documents/PlatformIO/Projects/ideaspark-stepper-controller-claude/**)",
+      "Bash(pio device:*)"
     ],
     "deny": [],
     "ask": []

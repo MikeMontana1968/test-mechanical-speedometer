@@ -50,7 +50,8 @@ public:
     bool isInTransition() const { return isMoving; }
 
     // Utility methods
-    void testSequence();  // Cycles through all gears for testing
+    void testSequence();     // Cycles through all gears for testing
+    void testServoOutput();  // Immediate servo test for scope verification
 };
 
 #endif // GEAR_INDICATOR_H
