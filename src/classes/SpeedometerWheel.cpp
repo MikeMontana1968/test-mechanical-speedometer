@@ -17,14 +17,27 @@ SpeedometerWheel::SpeedometerWheel()
 }
 
 void SpeedometerWheel::begin() {
+    Serial.println("Initializing stepper motor...");
+    Serial.print("Stepper pins: ");
+    Serial.print(STEPPER_PIN_1); Serial.print(", ");
+    Serial.print(STEPPER_PIN_2); Serial.print(", ");
+    Serial.print(STEPPER_PIN_3); Serial.print(", ");
+    Serial.println(STEPPER_PIN_4);
+    Serial.print("Endstop pin: GPIO ");
+    Serial.println(ENDSTOP_PIN);
+
     pinMode(ENDSTOP_PIN, INPUT_PULLUP);
     stepper.setSpeed(STEPPER_RPM);
     currentPosition = 0;
     currentPositionFloat = 0.0;
+
+    // Test stepper motor with a few steps
+    Serial.println("Testing stepper motor movement...");
+    testStepperMotor();
 }
 
 bool SpeedometerWheel::readEndstop() {
-    return digitalRead(ENDSTOP_PIN) == LOW;  // LOW means marker is detected
+    return digitalRead(ENDSTOP_PIN) == HIGH;  // HIGH means marker is detected
 }
 
 void SpeedometerWheel::singleStep(bool clockwise) {
@@ -43,28 +56,64 @@ int SpeedometerWheel::findEdge(bool clockwise, bool risingEdge) {
     bool targetState = risingEdge;  // true for rising edge (entering marker), false for falling edge (leaving marker)
     bool currentState = readEndstop();
 
-    // Move until we find the edge
-    for (int i = 0; i < STEPS_PER_REVOLUTION; i++) {
+    Serial.print("Searching for ");
+    Serial.print(risingEdge ? "rising" : "falling");
+    Serial.print(" edge, starting from state: ");
+    Serial.println(currentState ? "TRIGGERED" : "OPEN");
+
+    // Move until we find the edge (search up to 1.5 revolutions to be thorough)
+    for (int i = 0; i < (STEPS_PER_REVOLUTION * 3 / 2); i++) {
         singleStep(clockwise);
         delay(5);  // Small delay for sensor stability
 
         bool newState = readEndstop();
+
+        // Debug output every 100 steps
+        if (i % 100 == 0) {
+            Serial.print("Step ");
+            Serial.print(i);
+            Serial.print("/");
+            Serial.print(STEPS_PER_REVOLUTION * 3 / 2);
+            Serial.print(" - Sensor: ");
+            Serial.println(newState ? "TRIGGERED" : "OPEN");
+        }
+
         if (currentState != newState && newState == targetState) {
+            Serial.print("Edge found at step ");
+            Serial.print(currentPosition);
+            Serial.print(" - Transition: ");
+            Serial.print(currentState ? "TRIGGERED" : "OPEN");
+            Serial.print(" -> ");
+            Serial.println(newState ? "TRIGGERED" : "OPEN");
             return currentPosition;
         }
         currentState = newState;
     }
 
+    Serial.println("Edge not found after 1.5 revolutions");
     return -1;  // Edge not found
 }
 
 bool SpeedometerWheel::calibrateHome() {
     Serial.println("Starting home calibration...");
+    Serial.println("Looking for home marker...");
 
-    // First, move to find the start of the home marker
+    // First, try clockwise rotation to find the start of the home marker
+    Serial.println("Phase 1: Finding rising edge (entering marker) - Clockwise search...");
     homeStartPosition = findEdge(true, true);  // Find rising edge (entering marker)
+
     if (homeStartPosition == -1) {
-        Serial.println("Home marker start not found!");
+        Serial.println("Marker not found clockwise, trying counterclockwise...");
+        homeStartPosition = findEdge(false, true);  // Try counterclockwise
+    }
+
+    if (homeStartPosition == -1) {
+        Serial.println("Home marker start not found in either direction!");
+        Serial.println("Troubleshooting tips:");
+        Serial.println("- Ensure marker is attached to wheel");
+        Serial.println("- Check endstop sensor alignment");
+        Serial.println("- Verify marker can block optical sensor");
+        Serial.println("- Try manually rotating wheel to see sensor transitions");
         return false;
     }
 
@@ -72,9 +121,11 @@ bool SpeedometerWheel::calibrateHome() {
     Serial.println(homeStartPosition);
 
     // Continue rotating to find the end of the home marker
+    Serial.println("Phase 2: Finding falling edge (leaving marker)...");
     homeEndPosition = findEdge(true, false);  // Find falling edge (leaving marker)
     if (homeEndPosition == -1) {
         Serial.println("Home marker end not found!");
+        Serial.println("Marker may be too wide or sensor issue occurred");
         return false;
     }
 
@@ -296,4 +347,74 @@ int SpeedometerWheel::getTargetMPH() const {
 
     int stepsFromZero = stepsFromHomeCenter - ZERO_MPH_OFFSET;
     return constrain(stepsFromZero / STEPS_PER_MPH, MIN_SPEED_MPH, MAX_SPEED_MPH);
+}
+
+void SpeedometerWheel::testStepperMotor() {
+    Serial.println("=== STEPPER MOTOR TEST ===");    
+}
+
+void SpeedometerWheel::continuousStepperTest() {
+    Serial.println("\n=== CONTINUOUS STEPPER & SENSOR TEST ===");
+    Serial.println("This will continuously rotate the stepper and monitor sensor changes.");
+    Serial.println("Watch for sensor state transitions as the wheel rotates.");
+    Serial.println("Send any character via serial to stop the test.\n");
+
+    bool lastSensorState = readEndstop();
+    int stepCount = 0;
+
+    Serial.print("Starting sensor state: ");
+    Serial.println(lastSensorState ? "TRIGGERED" : "OPEN");
+    Serial.println("Rotating stepper motor clockwise...\n");
+
+    while (true) {
+        // Take one step
+        stepper.step(1);
+        stepCount++;
+        currentPosition++;
+
+        // Wrap position
+        if (currentPosition >= STEPS_PER_REVOLUTION) {
+            currentPosition = 0;
+        }
+
+        // Check sensor state
+        bool currentSensorState = readEndstop();
+
+        // Report if sensor state changed
+        if (currentSensorState != lastSensorState) {
+            Serial.print("*** SENSOR CHANGE at step ");
+            Serial.print(stepCount);
+            Serial.print(" (position ");
+            Serial.print(currentPosition);
+            Serial.print("): ");
+            Serial.print(lastSensorState ? "TRIGGERED" : "OPEN");
+            Serial.print(" -> ");
+            Serial.print(currentSensorState ? "TRIGGERED" : "OPEN");
+            Serial.println(" ***");
+            lastSensorState = currentSensorState;
+        }
+
+        // Progress report every 50 steps
+        if (stepCount % 50 == 0) {
+            Serial.print("Step ");
+            Serial.print(stepCount);
+            Serial.print(" - Position: ");
+            Serial.print(currentPosition);
+            Serial.print(" - Sensor: ");
+            Serial.println(currentSensorState ? "TRIGGERED" : "OPEN");
+        }
+
+        // Check for serial input to stop
+        if (Serial.available()) {
+            Serial.read(); // Clear the input
+            Serial.println("\n*** Test stopped by user input ***");
+            break;
+        }
+
+        delay(10);  // 50ms between steps for easier observation
+    }
+
+    Serial.println("=== CONTINUOUS TEST COMPLETE ===");
+    Serial.print("Total steps taken: ");
+    Serial.println(stepCount);
 }

@@ -26,12 +26,13 @@ void setup() {
   speedometer.begin();
 
   // Test servo output immediately after initialization
-  Serial.println("Testing servo output on GPIO 18...");
-  gearIndicator.testServoOutput();
-  Serial.println("Servo test complete. Check scope for PWM signal.");
 
   // Demo sequence: calibrate speedometer, then run demo
   delay(2000);
+
+  // Serial.println("Starting continuous stepper test to verify sensor...");
+  // displayManager.showCalibrationScreen("Stepper Test");
+  // speedometer.continuousStepperTest();
 
   Serial.println("Calibrating speedometer...");
   displayManager.showCalibrationScreen("Calibrating...");

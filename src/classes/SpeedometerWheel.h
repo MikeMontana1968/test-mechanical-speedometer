@@ -59,6 +59,8 @@ public:
     // Utility methods
     int stepsFromHome(int mph);
     int shortestPathToHome();
+    void testStepperMotor();         // Test stepper motor functionality
+    void continuousStepperTest();    // Continuous stepper rotation with sensor monitoring
 };
 
 #endif // SPEEDOMETER_WHEEL_H

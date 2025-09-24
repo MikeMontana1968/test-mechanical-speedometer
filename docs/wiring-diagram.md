@@ -32,10 +32,10 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
 | VCC | 5V | Power | Red wire |
 | GND | GND | Ground | Brown/Black wire |
 | **Stepper Motor** | | | |
-| IN1 | GPIO 19 | Phase 1 | ULN2003 driver input |
-| IN2 | GPIO 21 | Phase 2 | ULN2003 driver input |
-| IN3 | GPIO 22 | Phase 3 | ULN2003 driver input |
-| IN4 | GPIO 23 | Phase 4 | ULN2003 driver input |
+| IN1 | GPIO 25 | Phase 1 | ULN2003 driver input |
+| IN2 | GPIO 26 | Phase 2 | ULN2003 driver input |
+| IN3 | GPIO 27 | Phase 3 | ULN2003 driver input |
+| IN4 | GPIO 32 | Phase 4 | ULN2003 driver input |
 | **Optical Endstop** | | | |
 | Signal | GPIO 5 | Digital Input | Pull-up enabled in software |
 | VCC | 3.3V | Power | ESP32 3.3V output |
@@ -55,10 +55,10 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
    │          │ ┌──┤ GPIO 16 (RST)          │
    │          │ │  │                        │
    │          │ │  │ GPIO 18 ├──────────────┼─── Servo Signal (Orange)
-   │          │ │  │ GPIO 19 ├──────────────┼─── Stepper IN1
-   │          │ │  │ GPIO 21 ├──────────────┼─── Stepper IN2
-   │          │ │  │ GPIO 22 ├──────────────┼─── Stepper IN3
-   │          │ │  │ GPIO 23 ├──────────────┼─── Stepper IN4
+   │          │ │  │ GPIO 25 ├──────────────┼─── Stepper IN1
+   │          │ │  │ GPIO 26 ├──────────────┼─── Stepper IN2
+   │          │ │  │ GPIO 27 ├──────────────┼─── Stepper IN3
+   │          │ │  │ GPIO 32 ├──────────────┼─── Stepper IN4
    │          │ │  │ GPIO 5  ├──────────────┼─── Endstop Signal
    │          │ │  │         │              │
    │          │ │  │ 5V      ├──────────────┼─── 5V Power Rail
@@ -74,10 +74,10 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
    ┌──────────────┐             ┌─────────────────────────────┐
    │   ┌──────┐   │             │  ULN2003 Driver Board      │
    │   │      │   │             │ ┌─────┐  ┌─────────────┐   │
-   │   │ Gear │   │             │ │IN1  │  │             │   │◄─── GPIO 19
-   │   │ Dial │   │             │ │IN2  │  │   28BYJ-48  │   │◄─── GPIO 21
-   │   │      │   │             │ │IN3  │  │   Stepper   │   │◄─── GPIO 22
-   │   └──────┘   │             │ │IN4  │  │             │   │◄─── GPIO 23
+   │   │ Gear │   │             │ │IN1  │  │             │   │◄─── GPIO 25
+   │   │ Dial │   │             │ │IN2  │  │   28BYJ-48  │   │◄─── GPIO 26
+   │   │      │   │             │ │IN3  │  │   Stepper   │   │◄─── GPIO 27
+   │   └──────┘   │             │ │IN4  │  │             │   │◄─── GPIO 32
    │              │             │ │5V   │  │             │   │◄─── 5V
    │ ┌──────────┐ │             │ │GND  │  └─────────────┘   │◄─── GND
    │ │ ●   ●  ● │ │             │ └─────┘                   │
@@ -176,10 +176,10 @@ Position Range: 0° to 60° (5 positions)
 ### 3. Stepper Motor (Speedometer)
 ```
 ULN2003 Driver → ESP32:
-├── IN1 → GPIO 19
-├── IN2 → GPIO 21
-├── IN3 → GPIO 22
-├── IN4 → GPIO 23
+├── IN1 → GPIO 25
+├── IN2 → GPIO 26
+├── IN3 → GPIO 27
+├── IN4 → GPIO 32
 ├── VCC → 5V power rail
 └── GND → Ground rail
 
