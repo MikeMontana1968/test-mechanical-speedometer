@@ -15,15 +15,17 @@ DriveshaftMonitor::DriveshaftMonitor()
 void DriveshaftMonitor::begin() {
     pinMode(DRIVESHAFT_SENSOR_PIN, INPUT_PULLUP);
 
-    attachInterrupt(digitalPinToInterrupt(DRIVESHAFT_SENSOR_PIN),
-                   handleInterrupt,
-                   FALLING);
-
+    // Initialize all counters before enabling interrupt
     pulseCount = 0;
     lastPulseTime = 0;
     lastCalculationTime = millis();
     currentRPM = 0.0f;
     lastPulseCountSnapshot = 0;
+
+    // Enable interrupt after initialization
+    attachInterrupt(digitalPinToInterrupt(DRIVESHAFT_SENSOR_PIN),
+                   handleInterrupt,
+                   FALLING);
 
     Serial.println("DriveshaftMonitor: Initialized on GPIO " + String(DRIVESHAFT_SENSOR_PIN));
 }
@@ -42,15 +44,30 @@ void DriveshaftMonitor::update() {
 
     if (currentTime - lastCalculationTime >= RPM_CALCULATION_INTERVAL_MS) {
         unsigned long currentPulseCount = pulseCount;
-        unsigned long pulsesInInterval = currentPulseCount - lastPulseCountSnapshot;
         unsigned long actualInterval = currentTime - lastCalculationTime;
+
+        // Handle potential counter overflow/underflow
+        unsigned long pulsesInInterval = 0;
+        if (currentPulseCount >= lastPulseCountSnapshot) {
+            // Normal case: counter incremented
+            pulsesInInterval = currentPulseCount - lastPulseCountSnapshot;
+        } else {
+            // Counter reset or overflow - assume small number of pulses
+            pulsesInInterval = currentPulseCount;
+            Serial.println("DriveshaftMonitor: Pulse counter reset detected");
+        }
 
         if (pulsesInInterval > 0 && actualInterval > 0) {
             float pulsesPerMinute = (float)pulsesInInterval * (60000.0f / (float)actualInterval);
-            currentRPM = pulsesPerMinute;
 
-            if (currentRPM < MIN_RPM_THRESHOLD) {
+            // Apply bounds checking
+            if (pulsesPerMinute < MIN_RPM_THRESHOLD) {
                 currentRPM = 0.0f;
+            } else if (pulsesPerMinute > MAX_RPM_THRESHOLD) {
+                // Unrealistic RPM - likely calculation error, keep previous value
+                Serial.println("DriveshaftMonitor: Unrealistic RPM calculated (" + String(pulsesPerMinute, 0) + "), ignoring");
+            } else {
+                currentRPM = pulsesPerMinute;
             }
         } else if (currentTime - lastPulseTime > RPM_TIMEOUT_MS) {
             currentRPM = 0.0f;
