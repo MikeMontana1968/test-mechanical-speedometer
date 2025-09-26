@@ -16,9 +16,10 @@ void DriveshaftMonitor::begin() {
     pinMode(DRIVESHAFT_SENSOR_PIN, INPUT_PULLUP);
 
     // Initialize all counters before enabling interrupt
+    unsigned long currentTime = millis();
     pulseCount = 0;
-    lastPulseTime = 0;
-    lastCalculationTime = millis();
+    lastPulseTime = currentTime;  // Initialize to current time to prevent false triggers
+    lastCalculationTime = currentTime;
     currentRPM = 0.0f;
     lastPulseCountSnapshot = 0;
 
@@ -83,11 +84,12 @@ bool DriveshaftMonitor::isReceivingSignal() const {
 }
 
 void DriveshaftMonitor::reset() {
+    unsigned long currentTime = millis();
     pulseCount = 0;
-    lastPulseTime = 0;
+    lastPulseTime = currentTime;  // Initialize to current time to prevent false triggers
     currentRPM = 0.0f;
     lastPulseCountSnapshot = 0;
-    lastCalculationTime = millis();
+    lastCalculationTime = currentTime;
 }
 
 void DriveshaftMonitor::printStatus() {
