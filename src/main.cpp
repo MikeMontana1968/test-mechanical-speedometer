@@ -105,14 +105,15 @@ void loop() {
       demoMode = false;
     }
     rpmHandler.update(estimatedEngineRPM);
-  } else {
+  } 
+  /*
+  else {
     // Demo mode - run original demo sequence when no driveshaft signal
     if (!demoMode) {
       Serial.println("No driveshaft signal - switching to demo mode");
       demoMode = true;
       lastDemoTransition = currentTime;  // Reset demo timing
     }
-
     // Run demo sequence
     if (currentTime - lastDemoTransition > 4000) {  // Every 4 seconds
       lastDemoTransition = currentTime;
@@ -148,7 +149,8 @@ void loop() {
       demoStep++;
     }
   }
-
+*/
+  
   // Report RPM and status every 2 seconds
   if (currentTime - lastRpmReport > 2000) {
     lastRpmReport = currentTime;
@@ -158,7 +160,7 @@ void loop() {
                    "Gear: " + String(GEAR_NAMES[rpmHandler.getCurrentGear()]) + " | " +
                    "Signal: " + String(driveshaftMonitor.isReceivingSignal() ? "OK" : "NO"));
   }
-
+/*
   // Update display with current status every 500ms
   if (currentTime - lastStatusUpdate > 500) {
     lastStatusUpdate = currentTime;
@@ -172,6 +174,6 @@ void loop() {
     }
     // Note: In demo mode, display is updated immediately when demo transitions occur
   }
-
+*/
   delay(10);  // Small delay for smooth animation
 }
