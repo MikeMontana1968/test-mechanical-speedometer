@@ -62,6 +62,8 @@ public:
     void testStepperMotor();         // Test stepper motor functionality
     void continuousStepperTest();    // Continuous stepper rotation with sensor monitoring
     void alternativeStepperTest();   // Test with alternative pin sequence
+    void simpleGPIOTest();           // Simple GPIO pin test for multimeter/LED verification
+    void manualStepperTest();        // Manual stepper control bypassing libraries
 };
 
 #endif // SPEEDOMETER_WHEEL_H

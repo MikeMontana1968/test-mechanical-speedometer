@@ -42,6 +42,14 @@ void SpeedometerWheel::begin() {
     // Test stepper motor with a few steps
     Serial.println("Testing stepper motor movement...");
     testStepperMotor();
+
+    // Run simple GPIO test for hardware verification
+    Serial.println("\nRunning GPIO pin verification test...");
+    simpleGPIOTest();
+
+    // Run manual stepper test to verify motor operation
+    Serial.println("\nRunning manual stepper motor test...");
+    manualStepperTest();
 }
 
 bool SpeedometerWheel::readEndstop() {
@@ -523,4 +531,115 @@ void SpeedometerWheel::alternativeStepperTest() {
     Serial.println("- 5V power to ULN2003 driver");
     Serial.println("- Connections: GPIO25->IN1, GPIO26->IN2, GPIO27->IN3, GPIO32->IN4");
     Serial.println("- ULN2003 to 28BYJ-48 connection");
+}
+
+void SpeedometerWheel::simpleGPIOTest() {
+    Serial.println("=== SIMPLE GPIO PIN TEST ===");
+    Serial.println("This test slowly blinks each stepper pin individually.");
+    Serial.println("Use multimeter or connect LEDs to verify pin operation:");
+    Serial.println("- GPIO 25 (IN1): Connect LED + resistor to see blinking");
+    Serial.println("- GPIO 26 (IN2): Connect LED + resistor to see blinking");
+    Serial.println("- GPIO 27 (IN3): Connect LED + resistor to see blinking");
+    Serial.println("- GPIO 32 (IN4): Connect LED + resistor to see blinking");
+    Serial.println("Each pin will blink 5 times with 1-second intervals.\n");
+
+    // Set all pins as outputs
+    pinMode(STEPPER_PIN_1, OUTPUT);
+    pinMode(STEPPER_PIN_2, OUTPUT);
+    pinMode(STEPPER_PIN_3, OUTPUT);
+    pinMode(STEPPER_PIN_4, OUTPUT);
+
+    // Test each pin individually
+    int pins[] = {STEPPER_PIN_1, STEPPER_PIN_2, STEPPER_PIN_3, STEPPER_PIN_4};
+    String pinNames[] = {"GPIO 25 (IN1)", "GPIO 26 (IN2)", "GPIO 27 (IN3)", "GPIO 32 (IN4)"};
+
+    for (int pinIndex = 0; pinIndex < 4; pinIndex++) {
+        Serial.println("Testing " + pinNames[pinIndex] + "...");
+
+        for (int blink = 0; blink < 5; blink++) {
+            digitalWrite(pins[pinIndex], HIGH);
+            Serial.print("  Blink ");
+            Serial.print(blink + 1);
+            Serial.println(" - HIGH (3.3V)");
+            delay(1000);
+
+            digitalWrite(pins[pinIndex], LOW);
+            Serial.println("    - LOW (0V)");
+            delay(1000);
+        }
+
+        Serial.println("  " + pinNames[pinIndex] + " test complete.\n");
+        delay(500);
+    }
+
+    // Ensure all pins are LOW when done
+    for (int i = 0; i < 4; i++) {
+        digitalWrite(pins[i], LOW);
+    }
+
+    Serial.println("=== GPIO TEST COMPLETE ===");
+    Serial.println("If you measured voltage changes or saw LED blinking:");
+    Serial.println("✓ ESP32 GPIO pins are working");
+    Serial.println("✓ Pin connections to ULN2003 should be verified");
+    Serial.println("\nIf NO voltage changes or LED activity:");
+    Serial.println("✗ Check ESP32 power supply");
+    Serial.println("✗ Check GPIO pin connections");
+    Serial.println("✗ Try different GPIO pins if available");
+}
+
+void SpeedometerWheel::manualStepperTest() {
+    Serial.println("=== MANUAL STEPPER CONTROL TEST ===");
+    Serial.println("This bypasses the Arduino Stepper library entirely.");
+    Serial.println("Uses direct 28BYJ-48 step sequence for maximum compatibility.");
+    Serial.println("You should hear/feel stepper motor movement.\n");
+
+    // Set all pins as outputs
+    pinMode(STEPPER_PIN_1, OUTPUT);
+    pinMode(STEPPER_PIN_2, OUTPUT);
+    pinMode(STEPPER_PIN_3, OUTPUT);
+    pinMode(STEPPER_PIN_4, OUTPUT);
+
+    // 28BYJ-48 step sequence (full step mode)
+    // This is the exact sequence needed for this stepper motor
+    int stepSequence[4][4] = {
+        {1, 0, 0, 1},  // Step 1
+        {1, 1, 0, 0},  // Step 2
+        {0, 1, 1, 0},  // Step 3
+        {0, 0, 1, 1}   // Step 4
+    };
+
+    Serial.println("Starting 20 steps clockwise...");
+
+    for (int step = 0; step < 20; step++) {
+        int currentStep = step % 4;
+
+        // Apply the step pattern
+        digitalWrite(STEPPER_PIN_1, stepSequence[currentStep][0]);
+        digitalWrite(STEPPER_PIN_2, stepSequence[currentStep][1]);
+        digitalWrite(STEPPER_PIN_3, stepSequence[currentStep][2]);
+        digitalWrite(STEPPER_PIN_4, stepSequence[currentStep][3]);
+
+        Serial.print("Step ");
+        Serial.print(step + 1);
+        Serial.print(" - Pattern: ");
+        Serial.print(stepSequence[currentStep][0]);
+        Serial.print(stepSequence[currentStep][1]);
+        Serial.print(stepSequence[currentStep][2]);
+        Serial.println(stepSequence[currentStep][3]);
+
+        delay(100);  // 100ms between steps for observation
+    }
+
+    // Turn off all pins
+    digitalWrite(STEPPER_PIN_1, 0);
+    digitalWrite(STEPPER_PIN_2, 0);
+    digitalWrite(STEPPER_PIN_3, 0);
+    digitalWrite(STEPPER_PIN_4, 0);
+
+    Serial.println("\n=== MANUAL STEPPER TEST COMPLETE ===");
+    Serial.println("Results interpretation:");
+    Serial.println("✓ Heard/felt movement: Hardware connections are good");
+    Serial.println("✓ ULN2003 LEDs flashing: Driver getting signals");
+    Serial.println("✗ No movement or sound: Check power/connections");
+    Serial.println("✗ No ULN2003 LEDs: Check GPIO to ULN2003 wiring");
 }
