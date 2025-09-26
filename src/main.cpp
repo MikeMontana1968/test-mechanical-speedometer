@@ -62,6 +62,9 @@ void setup() {
 
 unsigned long lastRpmReport = 0;
 unsigned long lastStatusUpdate = 0;
+unsigned long lastDemoTransition = 0;
+int demoStep = 0;
+bool demoMode = true;  // Enable demo mode when no driveshaft signal
 
 void loop() {
   // Update all components for smooth transitions
@@ -89,8 +92,57 @@ void loop() {
     estimatedEngineRPM = driveshaftRPM * 3.9f * 2.0f;  // Assume average gear ratio
   }
 
-  // Update RPM handler with real driveshaft data and estimated engine RPM
-  rpmHandler.update(estimatedEngineRPM);
+  // Check if we should use RPM handler or demo mode
+  if (driveshaftMonitor.isReceivingSignal() && driveshaftRPM > 10.0f) {
+    // Real RPM mode - use driveshaft sensor data
+    if (demoMode) {
+      Serial.println("Driveshaft signal detected - switching to RPM mode");
+      demoMode = false;
+    }
+    rpmHandler.update(estimatedEngineRPM);
+  } else {
+    // Demo mode - run original demo sequence when no driveshaft signal
+    if (!demoMode) {
+      Serial.println("No driveshaft signal - switching to demo mode");
+      demoMode = true;
+      lastDemoTransition = currentTime;  // Reset demo timing
+    }
+
+    // Run demo sequence
+    if (currentTime - lastDemoTransition > 4000) {  // Every 4 seconds
+      lastDemoTransition = currentTime;
+
+      Gear newGear = NEUTRAL;
+      int newSpeed = 0;
+
+      switch(demoStep) {
+        case 0:
+          newGear = GEAR_1; newSpeed = 15;
+          break;
+        case 1:
+          newGear = GEAR_2; newSpeed = 35;
+          break;
+        case 2:
+          newGear = GEAR_3; newSpeed = 55;
+          break;
+        case 3:
+          newGear = GEAR_2; newSpeed = 25;
+          break;
+        case 4:
+          newGear = NEUTRAL; newSpeed = 0;
+          break;
+        default:
+          demoStep = -1;
+          newGear = GEAR_1; newSpeed = 15;
+          break;
+      }
+
+      gearIndicator.setGear(newGear);
+      speedometer.moveToMPH(newSpeed);
+      displayManager.updateStatus(newGear, newSpeed, GEAR_NAMES[newGear]);
+      demoStep++;
+    }
+  }
 
   // Report RPM and status every 2 seconds
   if (currentTime - lastRpmReport > 2000) {
@@ -102,14 +154,18 @@ void loop() {
                    "Signal: " + String(driveshaftMonitor.isReceivingSignal() ? "OK" : "NO"));
   }
 
-  // Update display with current RPM handler status every 500ms
+  // Update display with current status every 500ms
   if (currentTime - lastStatusUpdate > 500) {
     lastStatusUpdate = currentTime;
-    displayManager.updateStatus(
-      rpmHandler.getCurrentGear(),
-      rpmHandler.getCurrentSpeed(),
-      GEAR_NAMES[rpmHandler.getCurrentGear()]
-    );
+    if (!demoMode) {
+      // RPM mode - show RPM handler data
+      displayManager.updateStatus(
+        rpmHandler.getCurrentGear(),
+        rpmHandler.getCurrentSpeed(),
+        GEAR_NAMES[rpmHandler.getCurrentGear()]
+      );
+    }
+    // Note: In demo mode, display is updated immediately when demo transitions occur
   }
 
   delay(10);  // Small delay for smooth animation
