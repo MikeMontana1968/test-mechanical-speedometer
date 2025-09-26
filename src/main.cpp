@@ -29,6 +29,10 @@ void setup() {
   speedometer.begin();
   driveshaftMonitor.begin();
 
+  // Disable driveshaft monitor by default - enable only when sensor is connected
+  driveshaftMonitor.setEnabled(false);
+  Serial.println("DriveshaftMonitor disabled - connect sensor and enable manually for testing");
+
   // Test servo output immediately after initialization
 
   // Demo sequence: calibrate speedometer, then run demo
@@ -93,7 +97,7 @@ void loop() {
   }
 
   // Check if we should use RPM handler or demo mode
-  if (driveshaftMonitor.isReceivingSignal() && driveshaftRPM > 10.0f) {
+  if (driveshaftMonitor.isEnabled() && driveshaftMonitor.isReceivingSignal() && driveshaftRPM > 10.0f) {
     // Real RPM mode - use driveshaft sensor data
     if (demoMode) {
       Serial.println("Driveshaft signal detected - switching to RPM mode");
