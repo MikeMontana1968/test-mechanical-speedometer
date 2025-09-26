@@ -23,6 +23,11 @@ void SpeedometerWheel::begin() {
     Serial.print(STEPPER_PIN_2); Serial.print(", ");
     Serial.print(STEPPER_PIN_3); Serial.print(", ");
     Serial.println(STEPPER_PIN_4);
+    Serial.print("Constructor pin order: ");
+    Serial.print(STEPPER_PIN_1); Serial.print(", ");
+    Serial.print(STEPPER_PIN_3); Serial.print(", ");
+    Serial.print(STEPPER_PIN_2); Serial.print(", ");
+    Serial.println(STEPPER_PIN_4);
     Serial.print("Endstop pin: GPIO ");
     Serial.println(ENDSTOP_PIN);
 
@@ -30,6 +35,9 @@ void SpeedometerWheel::begin() {
     stepper.setSpeed(STEPPER_RPM);
     currentPosition = 0;
     currentPositionFloat = 0.0;
+
+    Serial.println("Stepper speed set to: " + String(STEPPER_RPM) + " RPM");
+    Serial.println("Steps per revolution: " + String(STEPS_PER_REVOLUTION));
 
     // Test stepper motor with a few steps
     Serial.println("Testing stepper motor movement...");
@@ -97,6 +105,28 @@ int SpeedometerWheel::findEdge(bool clockwise, bool risingEdge) {
 bool SpeedometerWheel::calibrateHome() {
     Serial.println("Starting home calibration...");
     Serial.println("Looking for home marker...");
+
+    // Check initial sensor state
+    bool initialState = readEndstop();
+    Serial.print("Initial sensor state: ");
+    Serial.println(initialState ? "TRIGGERED" : "OPEN");
+
+    // Verify stepper can move by testing a few steps
+    Serial.println("Pre-calibration movement test...");
+    for (int i = 0; i < 5; i++) {
+        Serial.print("Test step ");
+        Serial.print(i + 1);
+        Serial.print(" - Sensor: ");
+        bool state = readEndstop();
+        Serial.print(state ? "TRIGGERED" : "OPEN");
+
+        stepper.step(1);
+        delay(200);  // Longer delay for observation
+
+        bool newState = readEndstop();
+        Serial.print(" -> ");
+        Serial.println(newState ? "TRIGGERED" : "OPEN");
+    }
 
     // First, try clockwise rotation to find the start of the home marker
     Serial.println("Phase 1: Finding rising edge (entering marker) - Clockwise search...");
@@ -350,7 +380,26 @@ int SpeedometerWheel::getTargetMPH() const {
 }
 
 void SpeedometerWheel::testStepperMotor() {
-    Serial.println("=== STEPPER MOTOR TEST ===");    
+    Serial.println("=== STEPPER MOTOR TEST ===");
+    Serial.println("Testing stepper motor with 10 steps clockwise...");
+
+    // Test with small number of steps to verify movement
+    for (int i = 0; i < 10; i++) {
+        Serial.print("Step ");
+        Serial.print(i + 1);
+        Serial.print("/10 - Sensor: ");
+        bool sensorState = readEndstop();
+        Serial.println(sensorState ? "TRIGGERED" : "OPEN");
+
+        stepper.step(1);
+        delay(100);  // Slower for observation
+    }
+
+    Serial.println("Test complete. If no sensor changes occurred, check:");
+    Serial.println("- Stepper motor wiring");
+    Serial.println("- Power supply to stepper driver");
+    Serial.println("- Pin connections: GPIO 25,26,27,32");
+    Serial.println("- ULN2003 driver board connections");
 }
 
 void SpeedometerWheel::continuousStepperTest() {
@@ -417,4 +466,61 @@ void SpeedometerWheel::continuousStepperTest() {
     Serial.println("=== CONTINUOUS TEST COMPLETE ===");
     Serial.print("Total steps taken: ");
     Serial.println(stepCount);
+}
+
+void SpeedometerWheel::alternativeStepperTest() {
+    Serial.println("=== ALTERNATIVE STEPPER TEST ===");
+    Serial.println("If the regular stepper isn't working, this might be a pin sequence issue.");
+    Serial.println("The current pin order in constructor is: IN1, IN3, IN2, IN4");
+    Serial.println("For 28BYJ-48, the Arduino Stepper library expects this specific order.");
+    Serial.println("Let's try some manual pin control to verify hardware...");
+
+    // Set all pins as outputs
+    pinMode(STEPPER_PIN_1, OUTPUT);
+    pinMode(STEPPER_PIN_2, OUTPUT);
+    pinMode(STEPPER_PIN_3, OUTPUT);
+    pinMode(STEPPER_PIN_4, OUTPUT);
+
+    // Test basic pin control
+    Serial.println("Testing individual pin control (should cause small movements):");
+
+    for (int cycle = 0; cycle < 3; cycle++) {
+        Serial.print("Cycle ");
+        Serial.print(cycle + 1);
+        Serial.println(" - Activating pins in sequence:");
+
+        // Basic 4-step sequence
+        digitalWrite(STEPPER_PIN_1, HIGH); digitalWrite(STEPPER_PIN_2, LOW);
+        digitalWrite(STEPPER_PIN_3, LOW); digitalWrite(STEPPER_PIN_4, LOW);
+        Serial.println("  PIN1=HIGH, others=LOW");
+        delay(500);
+
+        digitalWrite(STEPPER_PIN_1, LOW); digitalWrite(STEPPER_PIN_2, HIGH);
+        digitalWrite(STEPPER_PIN_3, LOW); digitalWrite(STEPPER_PIN_4, LOW);
+        Serial.println("  PIN2=HIGH, others=LOW");
+        delay(500);
+
+        digitalWrite(STEPPER_PIN_1, LOW); digitalWrite(STEPPER_PIN_2, LOW);
+        digitalWrite(STEPPER_PIN_3, HIGH); digitalWrite(STEPPER_PIN_4, LOW);
+        Serial.println("  PIN3=HIGH, others=LOW");
+        delay(500);
+
+        digitalWrite(STEPPER_PIN_1, LOW); digitalWrite(STEPPER_PIN_2, LOW);
+        digitalWrite(STEPPER_PIN_3, LOW); digitalWrite(STEPPER_PIN_4, HIGH);
+        Serial.println("  PIN4=HIGH, others=LOW");
+        delay(500);
+    }
+
+    // Turn off all pins
+    digitalWrite(STEPPER_PIN_1, LOW);
+    digitalWrite(STEPPER_PIN_2, LOW);
+    digitalWrite(STEPPER_PIN_3, LOW);
+    digitalWrite(STEPPER_PIN_4, LOW);
+
+    Serial.println("Manual pin test complete.");
+    Serial.println("If you saw/heard the stepper move, wiring is correct.");
+    Serial.println("If no movement, check:");
+    Serial.println("- 5V power to ULN2003 driver");
+    Serial.println("- Connections: GPIO25->IN1, GPIO26->IN2, GPIO27->IN3, GPIO32->IN4");
+    Serial.println("- ULN2003 to 28BYJ-48 connection");
 }

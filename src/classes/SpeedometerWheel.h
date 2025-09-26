@@ -61,6 +61,7 @@ public:
     int shortestPathToHome();
     void testStepperMotor();         // Test stepper motor functionality
     void continuousStepperTest();    // Continuous stepper rotation with sensor monitoring
+    void alternativeStepperTest();   // Test with alternative pin sequence
 };
 
 #endif // SPEEDOMETER_WHEEL_H
