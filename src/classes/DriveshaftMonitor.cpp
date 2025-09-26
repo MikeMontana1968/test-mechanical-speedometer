@@ -9,7 +9,7 @@ DriveshaftMonitor::DriveshaftMonitor()
 	: lastCalculationTime(0),
 	  currentRPM(0.0f),
 	  lastPulseCountSnapshot(0),
-	  enabled(false) {  // Start disabled until explicitly enabled
+	  enabled(true) {  // Start enabled for testing/debug
     instance = this;
 }
 
@@ -93,9 +93,14 @@ void DriveshaftMonitor::update() {
 }
 
 bool DriveshaftMonitor::isReceivingSignal() const {
-    // Only consider signal valid if we have recent pulses AND a reasonable RPM
+    // Basic pulse detection - shows any recent interrupt activity (for debug)
+    return (millis() - lastPulseTime) < RPM_TIMEOUT_MS;
+}
+
+bool DriveshaftMonitor::isValidSignal() const {
+    // Filtered signal validation - requires stable RPM to be considered real
     // This filters out electrical noise that creates sporadic low-rate pulses
-    return (millis() - lastPulseTime) < RPM_TIMEOUT_MS && currentRPM >= MIN_STABLE_RPM;
+    return isReceivingSignal() && currentRPM >= MIN_STABLE_RPM;
 }
 
 void DriveshaftMonitor::reset() {
@@ -112,6 +117,7 @@ void DriveshaftMonitor::printStatus() {
     Serial.println("Current RPM: " + String(currentRPM, 1));
     Serial.println("Total Pulses: " + String(pulseCount));
     Serial.println("Signal Active: " + String(isReceivingSignal() ? "Yes" : "No"));
+    Serial.println("Valid Signal: " + String(isValidSignal() ? "Yes" : "No"));
     Serial.println("Last Pulse: " + String(millis() - lastPulseTime) + "ms ago");
     Serial.println("Enabled: " + String(enabled ? "Yes" : "No"));
 }

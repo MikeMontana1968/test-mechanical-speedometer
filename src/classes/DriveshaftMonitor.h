@@ -30,7 +30,8 @@ public:
 
     float getRPM() const { return currentRPM; }
     unsigned long getPulseCount() const { return pulseCount; }
-    bool isReceivingSignal() const;
+    bool isReceivingSignal() const;        // Basic pulse detection (for debug)
+    bool isValidSignal() const;            // Filtered signal validation (for control)
 
     void reset();
     void printStatus();
