@@ -2,7 +2,8 @@
 #define CONFIG_H
 
 // GPIO Pin Definitions
-#define SERVO_PIN 18  // GPIO 18 - PWM capable pin for servo control
+#define SERVO_PIN 19  // GPIO 19 - PWM capable pin for servo control
+#define DRIVESHAFT_SENSOR_PIN 18  // GPIO 18 - Driveshaft optical endstop sensor
 
 // OLED Display Settings - using default I2C pins like working project
 // Default I2C pins: SDA=21, SCL=22 (ESP32 defaults)

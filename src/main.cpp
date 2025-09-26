@@ -5,10 +5,12 @@
 #include "classes/GearIndicator.h"
 #include "classes/RPMHandler.h"
 #include "classes/DisplayManager.h"
+#include "classes/DriveshaftMonitor.h"
 
 GearIndicator gearIndicator;
 SpeedometerWheel speedometer;
 DisplayManager displayManager;
+DriveshaftMonitor driveshaftMonitor;
 
 void setup() {
   Serial.begin(115200);
@@ -24,6 +26,7 @@ void setup() {
 
   gearIndicator.begin();
   speedometer.begin();
+  driveshaftMonitor.begin();
 
   // Test servo output immediately after initialization
 
@@ -62,12 +65,14 @@ void setup() {
 
 unsigned long lastTransition = 0;
 int demoStep = 0;
+unsigned long lastRpmReport = 0;
 
 void loop() {
   // Update all components for smooth transitions
   gearIndicator.update();
   speedometer.update();
   displayManager.update();
+  driveshaftMonitor.update();
 
   // Update display diagnostics with current component states
   displayManager.updateDiagnostics(
@@ -76,8 +81,15 @@ void loop() {
     speedometer.getCalibrationStatus()
   );
 
-  // Demo sequence with timed transitions
+  // Report driveshaft RPM every 2 seconds
   unsigned long currentTime = millis();
+  if (currentTime - lastRpmReport > 2000) {
+    lastRpmReport = currentTime;
+    Serial.println("Driveshaft RPM: " + String(driveshaftMonitor.getRPM(), 1) +
+                   " | Signal: " + String(driveshaftMonitor.isReceivingSignal() ? "OK" : "NO"));
+  }
+
+  // Demo sequence with timed transitions
   if (currentTime - lastTransition > 4000) {  // Every 4 seconds
     lastTransition = currentTime;
 

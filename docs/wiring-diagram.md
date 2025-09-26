@@ -14,6 +14,7 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
 
 ### Sensors
 - **Optical Endstop** with 1M cable (Speedometer Home Position)
+- **Optical Endstop** with 1M cable (Driveshaft RPM Sensor)
 
 ### Power Supply
 - **5V Power Supply** (for stepper motor and servo)
@@ -28,7 +29,7 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
 | SCL | GPIO 15 | I2C Clock | Built-in on ESP32 dev board |
 | RST | GPIO 16 | Reset | Built-in on ESP32 dev board |
 | **Servo Motor** | | | |
-| Signal | GPIO 18 | PWM Control | Orange/Yellow wire |
+| Signal | GPIO 19 | PWM Control | Orange/Yellow wire |
 | VCC | 5V | Power | Red wire |
 | GND | GND | Ground | Brown/Black wire |
 | **Stepper Motor** | | | |
@@ -37,7 +38,11 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
 | IN3 | GPIO 27 | Phase 3 | ULN2003 driver input |
 | IN4 | GPIO 32 | Phase 4 | ULN2003 driver input |
 | **Optical Endstop** | | | |
-| Signal | GPIO 5 | Digital Input | Pull-up enabled in software |
+| Signal | GPIO 5 | Digital Input | Speedometer home position |
+| VCC | 3.3V | Power | ESP32 3.3V output |
+| GND | GND | Ground | ESP32 ground |
+| **Driveshaft Sensor** | | | |
+| Signal | GPIO 18 | Digital Input | Driveshaft RPM measurement |
 | VCC | 3.3V | Power | ESP32 3.3V output |
 | GND | GND | Ground | ESP32 ground |
 
@@ -54,7 +59,8 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
    │          ┌────┤ GPIO 15 (SCL)          │
    │          │ ┌──┤ GPIO 16 (RST)          │
    │          │ │  │                        │
-   │          │ │  │ GPIO 18 ├──────────────┼─── Servo Signal (Orange)
+   │          │ │  │ GPIO 18 ├──────────────┼─── Driveshaft Sensor Signal
+   │          │ │  │ GPIO 19 ├──────────────┼─── Servo Signal (Orange)
    │          │ │  │ GPIO 25 ├──────────────┼─── Stepper IN1
    │          │ │  │ GPIO 26 ├──────────────┼─── Stepper IN2
    │          │ │  │ GPIO 27 ├──────────────┼─── Stepper IN3
@@ -84,7 +90,7 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
    │ └──────────┘ │             └─────────────────────────────┘
    │  1   2  3    │               3-Pin RC Servo Connector
    │  │   │  │    │               Pin 1: Brown/Black (GND)
-   │  │   │  └────┼─── GPIO 18    Pin 2: Red (5V Power)
+   │  │   │  └────┼─── GPIO 19    Pin 2: Red (5V Power)
    │  │   └───────┼─── 5V         Pin 3: Orange/Yellow (Signal)
    │  └───────────┼─── GND
    └──────────────┘
@@ -157,7 +163,7 @@ Wire Color Standards:
 DM-S0020 Servo → ESP32:
 ├── Pin 1 (Brown/Black) → Ground rail
 ├── Pin 2 (Red)         → 5V power rail
-└── Pin 3 (Orange)      → GPIO 18 (PWM signal)
+└── Pin 3 (Orange)      → GPIO 19 (PWM signal)
 
 Signal Specifications:
 ├── PWM Frequency: 50Hz (20ms period)
@@ -199,6 +205,14 @@ Optical Endstop → ESP32:
 
 Function: Detects speedometer "home" position (0 MPH)
 └── LOW signal when beam is blocked by speed dial marker
+
+Driveshaft Sensor → ESP32:
+├── Signal → GPIO 18 (with internal pull-up)
+├── VCC    → 3.3V output pin
+└── GND    → Ground rail
+
+Function: Measures driveshaft RPM for transmission calculations
+└── LOW signal when beam is blocked by driveshaft rotation marker
 ```
 
 ### 5. OLED Display (Built-in)
