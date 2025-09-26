@@ -10,9 +10,10 @@ const float RPMHandler::TRANSMISSION_RATIOS[5] = {
     1.0f    // Not used (placeholder)
 };
 
-RPMHandler::RPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo)
+RPMHandler::RPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, DriveshaftMonitor* driveshaft)
 	: gearIndicator(gearInd),
 	  speedometer(speedo),
+	  driveshaftMonitor(driveshaft),
 	  currentGear(NEUTRAL),
 	  candidateGear(NEUTRAL),
 	  currentSpeed(0),
@@ -60,6 +61,17 @@ void RPMHandler::update(float engineRPM, float driveshaftRPM) {
         Serial.print(" RPM, Driveshaft: ");
         Serial.print(driveshaftRPM);
         Serial.println(" RPM)");
+    }
+}
+
+void RPMHandler::update(float engineRPM) {
+    // Use DriveshaftMonitor for automatic driveshaft RPM reading
+    if (driveshaftMonitor) {
+        float driveshaftRPM = driveshaftMonitor->getRPM();
+        update(engineRPM, driveshaftRPM);
+    } else {
+        // Fallback: use last known driveshaft RPM
+        update(engineRPM, lastDriveshaftRPM);
     }
 }
 

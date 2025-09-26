@@ -4,11 +4,13 @@
 #include "config.h"
 #include "GearIndicator.h"
 #include "SpeedometerWheel.h"
+#include "DriveshaftMonitor.h"
 
 class RPMHandler {
 private:
     GearIndicator* gearIndicator;
     SpeedometerWheel* speedometer;
+    DriveshaftMonitor* driveshaftMonitor;
 
     // 1970 MGB Three-speed manual transmission specifications
     static const float TRANSMISSION_RATIOS[5];  // Index 0=Reverse, 1=1st, 2=2nd, 3=3rd, 4=Not used
@@ -40,10 +42,13 @@ private:
     float calculateExpectedEngineRPM(Gear gear, float driveshaftRPM);
 
 public:
-    RPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo);
+    RPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, DriveshaftMonitor* driveshaft = nullptr);
 
     // Main update method - call this regularly with current RPM values
     void update(float engineRPM, float driveshaftRPM);
+
+    // Overloaded update method that uses DriveshaftMonitor for automatic driveshaft RPM
+    void update(float engineRPM);
 
     // Configuration methods
     void setDifferentialRatio(float ratio) { /* Not implemented - const for MGB */ }

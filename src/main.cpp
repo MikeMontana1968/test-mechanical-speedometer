@@ -11,6 +11,7 @@ GearIndicator gearIndicator;
 SpeedometerWheel speedometer;
 DisplayManager displayManager;
 DriveshaftMonitor driveshaftMonitor;
+RPMHandler rpmHandler(&gearIndicator, &speedometer, &driveshaftMonitor);
 
 void setup() {
   Serial.begin(115200);
@@ -45,17 +46,13 @@ void setup() {
     displayManager.showCalibrationScreen("Calibration OK");
     delay(1000);
 
-    // Start demo sequence
-    Serial.println("Starting demo sequence...");
+    // Start real RPM-based speed calculation
+    Serial.println("Starting RPM-based speed calculation...");
+    Serial.println("Ready to receive driveshaft RPM input for speed calculations");
 
-    gearIndicator.setGear(GEAR_1);
-    speedometer.moveToMPH(15);
-
-    // Update display with initial status
-    displayManager.updateStatus(GEAR_1, 15, GEAR_NAMES[GEAR_1]);
+    // Initial neutral state
+    displayManager.updateStatus(NEUTRAL, 0, GEAR_NAMES[NEUTRAL]);
     displayManager.updateDiagnostics(false, false, true);
-
-    // More transitions will happen in loop
   } else {
     Serial.println("Speedometer calibration failed!");
     displayManager.showErrorScreen("Calibration Failed");
@@ -63,9 +60,8 @@ void setup() {
   }
 }
 
-unsigned long lastTransition = 0;
-int demoStep = 0;
 unsigned long lastRpmReport = 0;
+unsigned long lastStatusUpdate = 0;
 
 void loop() {
   // Update all components for smooth transitions
@@ -81,66 +77,39 @@ void loop() {
     speedometer.getCalibrationStatus()
   );
 
-  // Report driveshaft RPM every 2 seconds
+  // Get current driveshaft RPM and calculate estimated engine RPM
   unsigned long currentTime = millis();
-  if (currentTime - lastRpmReport > 2000) {
-    lastRpmReport = currentTime;
-    Serial.println("Driveshaft RPM: " + String(driveshaftMonitor.getRPM(), 1) +
-                   " | Signal: " + String(driveshaftMonitor.isReceivingSignal() ? "OK" : "NO"));
+  float driveshaftRPM = driveshaftMonitor.getRPM();
+
+  // Simulate engine RPM based on driveshaft RPM and estimated gear ratio
+  // For now, assume 2nd gear (2.21:1) * differential (3.9:1) = ~8.6:1 overall
+  // This gives a reasonable estimate until we add real engine RPM sensing
+  float estimatedEngineRPM = 0.0f;
+  if (driveshaftRPM > 10.0f) {  // Only calculate if we have meaningful driveshaft RPM
+    estimatedEngineRPM = driveshaftRPM * 3.9f * 2.0f;  // Assume average gear ratio
   }
 
-  // Demo sequence with timed transitions
-  if (currentTime - lastTransition > 4000) {  // Every 4 seconds
-    lastTransition = currentTime;
+  // Update RPM handler with real driveshaft data and estimated engine RPM
+  rpmHandler.update(estimatedEngineRPM);
 
-    Gear newGear = GEAR_1;  // Default initialization
-    int newSpeed = 0;       // Default initialization
+  // Report RPM and status every 2 seconds
+  if (currentTime - lastRpmReport > 2000) {
+    lastRpmReport = currentTime;
+    Serial.println("Driveshaft: " + String(driveshaftRPM, 1) + " RPM | " +
+                   "Engine: " + String(estimatedEngineRPM, 0) + " RPM | " +
+                   "Speed: " + String(rpmHandler.getCurrentSpeed()) + " MPH | " +
+                   "Gear: " + String(GEAR_NAMES[rpmHandler.getCurrentGear()]) + " | " +
+                   "Signal: " + String(driveshaftMonitor.isReceivingSignal() ? "OK" : "NO"));
+  }
 
-    switch(demoStep) {
-      case 0:
-        newGear = GEAR_2;
-        newSpeed = 35;
-        gearIndicator.setGear(newGear);
-        speedometer.moveToMPH(newSpeed);
-        break;
-      case 1:
-        newGear = GEAR_3;
-        newSpeed = 55;
-        gearIndicator.setGear(newGear);
-        speedometer.moveToMPH(newSpeed);
-        break;
-      case 2:
-        newGear = GEAR_2;
-        newSpeed = 25;
-        gearIndicator.setGear(newGear);
-        speedometer.moveToMPH(newSpeed);
-        break;
-      case 3:
-        newGear = NEUTRAL;
-        newSpeed = 0;
-        gearIndicator.setGear(newGear);
-        speedometer.moveToMPH(newSpeed);
-        break;
-      case 4:
-        newGear = REVERSE;
-        newSpeed = 5;
-        gearIndicator.setGear(newGear);
-        speedometer.moveToMPH(newSpeed);
-        break;
-      default:
-        // Reset demo
-        demoStep = -1;
-        newGear = GEAR_1;
-        newSpeed = 15;
-        gearIndicator.setGear(newGear);
-        speedometer.moveToMPH(newSpeed);
-        break;
-    }
-
-    // Update display with new status
-    displayManager.updateStatus(newGear, newSpeed, GEAR_NAMES[newGear]);
-
-    demoStep++;
+  // Update display with current RPM handler status every 500ms
+  if (currentTime - lastStatusUpdate > 500) {
+    lastStatusUpdate = currentTime;
+    displayManager.updateStatus(
+      rpmHandler.getCurrentGear(),
+      rpmHandler.getCurrentSpeed(),
+      GEAR_NAMES[rpmHandler.getCurrentGear()]
+    );
   }
 
   delay(10);  // Small delay for smooth animation
