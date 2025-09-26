@@ -43,13 +43,6 @@ void DriveshaftMonitor::handleInterrupt() {
     if (currentTime - lastPulseTime > 10) {
         pulseCount++;
         lastPulseTime = currentTime;
-
-        // Debug: Log interrupt activity (remove this in production)
-        static unsigned long lastDebugPrint = 0;
-        if (currentTime - lastDebugPrint > 500) {  // Print max every 500ms
-            Serial.println("DriveshaftMonitor: Interrupt triggered (total: " + String(pulseCount) + ")");
-            lastDebugPrint = currentTime;
-        }
     }
 }
 
@@ -68,7 +61,6 @@ void DriveshaftMonitor::update() {
         } else {
             // Counter reset or overflow - assume small number of pulses
             pulsesInInterval = currentPulseCount;
-            Serial.println("DriveshaftMonitor: Pulse counter reset detected");
         }
 
         if (pulsesInInterval > 0 && actualInterval > 0) {
@@ -79,7 +71,7 @@ void DriveshaftMonitor::update() {
                 currentRPM = 0.0f;
             } else if (pulsesPerMinute > MAX_RPM_THRESHOLD) {
                 // Unrealistic RPM - likely calculation error, keep previous value
-                Serial.println("DriveshaftMonitor: Unrealistic RPM calculated (" + String(pulsesPerMinute, 0) + "), ignoring");
+                // (silently ignore unrealistic values)
             } else {
                 currentRPM = pulsesPerMinute;
             }
@@ -127,8 +119,5 @@ void DriveshaftMonitor::setEnabled(bool enable) {
     if (!enable) {
         // When disabling, reset all counters to prevent stale readings
         reset();
-        Serial.println("DriveshaftMonitor: Disabled");
-    } else {
-        Serial.println("DriveshaftMonitor: Enabled");
     }
 }

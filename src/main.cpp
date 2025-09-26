@@ -29,9 +29,8 @@ void setup() {
   speedometer.begin();
   driveshaftMonitor.begin();
 
-  // Enable driveshaft monitor for testing - shows noise vs real signals
+  // Enable driveshaft monitor for testing
   driveshaftMonitor.setEnabled(true);
-  Serial.println("DriveshaftMonitor enabled - will show noise until real sensor connected");
 
   // Test servo output immediately after initialization
 
