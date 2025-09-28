@@ -25,9 +25,9 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
 | Component | ESP32 Pin | Function | Notes |
 |-----------|-----------|----------|--------|
 | **OLED Display** | | | |
-| SDA | GPIO 4 | I2C Data | Built-in on ESP32 dev board |
-| SCL | GPIO 15 | I2C Clock | Built-in on ESP32 dev board |
-| RST | GPIO 16 | Reset | Built-in on ESP32 dev board |
+| SDA | GPIO 21 | I2C Data | ESP32 default I2C pins |
+| SCL | GPIO 22 | I2C Clock | ESP32 default I2C pins |
+| RST | -1 | Reset | Software reset (no hardware pin) |
 | **Servo Motor** | | | |
 | Signal | GPIO 19 | PWM Control | Orange/Yellow wire |
 | VCC | 5V | Power | Red wire |
@@ -55,9 +55,9 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
                    │    │ 0.96" OLED  │      │
                    │    │   Display   │      │
                    │    └─────────────┘      │
-   ┌───────────────┤ GPIO 4  (SDA)          │
-   │          ┌────┤ GPIO 15 (SCL)          │
-   │          │ ┌──┤ GPIO 16 (RST)          │
+   ┌───────────────┤ GPIO 21 (SDA)          │
+   │          ┌────┤ GPIO 22 (SCL)          │
+   │          │ ┌──┤ (No RST pin)           │
    │          │ │  │                        │
    │          │ │  │ GPIO 18 ├──────────────┼─── Driveshaft Sensor Signal
    │          │ │  │ GPIO 19 ├──────────────┼─── Servo Signal (Orange)
@@ -72,9 +72,9 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
    │          │ │  │ GND     ├──────────────┼─── Ground Rail
    │          │ │  └─────────────────────────┘
    │          │ │
-   │          │ └─ Built-in OLED connections
-   │          └─ Built-in OLED connections
-   └─ Built-in OLED connections
+   │          │ └─ Default I2C connections
+   │          └─ Default I2C connections
+   └─ Default I2C connections
 
     DM-S0020 Servo               28BYJ-48 + ULN2003 Driver
    ┌──────────────┐             ┌─────────────────────────────┐
@@ -211,18 +211,19 @@ Driveshaft Sensor → ESP32:
 ├── VCC    → 3.3V output pin
 └── GND    → Ground rail
 
-Function: Measures driveshaft RPM for transmission calculations
+Function: Measures driveshaft RPM for gear detection and speed calculation
 └── LOW signal when beam is blocked by driveshaft rotation marker
 ```
 
-### 5. OLED Display (Built-in)
+### 5. OLED Display (External I2C)
 ```
-Integrated 0.96" OLED → ESP32 (Pre-wired):
-├── SDA → GPIO 4  (I2C Data)
-├── SCL → GPIO 15 (I2C Clock)
-└── RST → GPIO 16 (Reset)
+0.96" OLED → ESP32:
+├── SDA → GPIO 21 (I2C Data - ESP32 default)
+├── SCL → GPIO 22 (I2C Clock - ESP32 default)
+├── VCC → 3.3V (Power)
+└── GND → Ground
 
-No external wiring required for display
+Uses ESP32 default I2C pins, software reset only
 ```
 
 ## Assembly Notes

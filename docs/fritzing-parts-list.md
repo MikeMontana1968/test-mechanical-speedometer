@@ -28,20 +28,24 @@ To create the actual Fritzing diagram for this project, use these components and
 | 5V Power | +5V | ULN2003 | VCC | Red |
 | 5V Power | GND | ESP32 | GND | Black |
 | **Servo Motor** | | | | |
-| Servo | Signal | ESP32 | GPIO 18 | Orange |
+| Servo | Signal | ESP32 | GPIO 19 | Orange |
 | Servo | VCC | Power Rail | +5V | Red |
 | Servo | GND | Power Rail | GND | Brown |
 | **Stepper Motor** | | | | |
-| ULN2003 | IN1 | ESP32 | GPIO 19 | Blue |
-| ULN2003 | IN2 | ESP32 | GPIO 21 | Green |
-| ULN2003 | IN3 | ESP32 | GPIO 22 | Yellow |
-| ULN2003 | IN4 | ESP32 | GPIO 23 | Purple |
+| ULN2003 | IN1 | ESP32 | GPIO 25 | Blue |
+| ULN2003 | IN2 | ESP32 | GPIO 26 | Green |
+| ULN2003 | IN3 | ESP32 | GPIO 27 | Yellow |
+| ULN2003 | IN4 | ESP32 | GPIO 32 | Purple |
 | ULN2003 | VCC | Power Rail | +5V | Red |
 | ULN2003 | GND | Power Rail | GND | Black |
 | **Optical Endstop** | | | | |
 | Endstop | Signal | ESP32 | GPIO 5 | White |
 | Endstop | VCC | ESP32 | 3.3V | Red |
 | Endstop | GND | ESP32 | GND | Black |
+| **Driveshaft Sensor** | | | | |
+| Sensor | Signal | ESP32 | GPIO 18 | Gray |
+| Sensor | VCC | ESP32 | 3.3V | Red |
+| Sensor | GND | ESP32 | GND | Black |
 
 ### Fritzing Diagram Layout
 
@@ -63,9 +67,10 @@ Power Distribution:
 - Common ground for all components
 
 Signal Routing:
-- GPIO 18: PWM to servo (500-2500μs pulse width)
-- GPIO 19-23: Digital outputs to stepper driver
-- GPIO 5: Digital input from optical sensor (pulled up)
+- GPIO 19: PWM to servo (1000-2000μs pulse width)
+- GPIO 25,26,27,32: Digital outputs to stepper driver
+- GPIO 5: Digital input from optical endstop (pulled up)
+- GPIO 18: Digital input from driveshaft sensor (pulled up)
 ```
 
 #### PCB View
@@ -114,7 +119,7 @@ If specific parts aren't available in Fritzing:
 ```xml
 <!-- Custom part showing integrated OLED display -->
 <property name="Display">0.96" OLED Integrated</property>
-<property name="I2C">SDA:GPIO4, SCL:GPIO15</property>
+<property name="I2C">SDA:GPIO21, SCL:GPIO22</property>
 ```
 
 ### Assembly Instructions for Fritzing

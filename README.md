@@ -76,9 +76,9 @@ Manages stepper motor speedometer:
 #define ENDSTOP_PIN 5         // Optical endstop for speedometer homing
 
 // OLED Display (I2C)
-#define OLED_SDA 4            // I2C data pin
-#define OLED_SCL 15           // I2C clock pin
-#define OLED_RST 16           // Display reset pin
+// I2C uses ESP32 default pins (SDA=21, SCL=22)
+// No explicit pin definitions needed - Wire library uses defaults
+// Software reset used (no hardware reset pin required)
 ```
 
 ## Usage
