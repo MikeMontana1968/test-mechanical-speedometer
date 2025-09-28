@@ -1,8 +1,8 @@
-#include "RPMHandler.h"
+#include "DriveshaftRPMHandler.h"
 #include <Arduino.h>
 
 // 1970 MGB Three-speed manual transmission ratios
-const float RPMHandler::TRANSMISSION_RATIOS[5] = {
+const float DriveshaftRPMHandler::TRANSMISSION_RATIOS[5] = {
     3.44f,  // Reverse gear
     3.44f,  // 1st gear
     2.21f,  // 2nd gear
@@ -10,7 +10,7 @@ const float RPMHandler::TRANSMISSION_RATIOS[5] = {
     1.0f    // Not used (placeholder)
 };
 
-RPMHandler::RPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, DriveshaftMonitor* driveshaft)
+DriveshaftRPMHandler::DriveshaftRPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, DriveshaftMonitor* driveshaft)
 	: gearIndicator(gearInd),
 	  speedometer(speedo),
 	  driveshaftMonitor(driveshaft),
@@ -23,7 +23,7 @@ RPMHandler::RPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, Drivesh
 	  candidateGearStartTime(0) {
 }
 
-void RPMHandler::update(float driveshaftRPM, float wheelRPM) {
+void DriveshaftRPMHandler::update(float driveshaftRPM, float wheelRPM) {
     lastDriveshaftRPM = driveshaftRPM;
     lastWheelRPM = wheelRPM;
     unsigned long currentTime = millis();
@@ -64,7 +64,7 @@ void RPMHandler::update(float driveshaftRPM, float wheelRPM) {
     }
 }
 
-void RPMHandler::update(float driveshaftRPM) {
+void DriveshaftRPMHandler::update(float driveshaftRPM) {
     // Use DriveshaftMonitor for automatic wheel RPM reading (or calculate from driveshaft)
     if (driveshaftMonitor) {
         float monitoredRPM = driveshaftMonitor->getRPM();
@@ -78,7 +78,7 @@ void RPMHandler::update(float driveshaftRPM) {
     }
 }
 
-Gear RPMHandler::calculateOptimalGear(float driveshaftRPM, float wheelRPM) {
+Gear DriveshaftRPMHandler::calculateOptimalGear(float driveshaftRPM, float wheelRPM) {
     // Handle special cases - low RPM indicates neutral or stopped
     if (driveshaftRPM < 100.0f || abs(wheelRPM) < 10.0f) {
         return NEUTRAL;
@@ -103,7 +103,7 @@ Gear RPMHandler::calculateOptimalGear(float driveshaftRPM, float wheelRPM) {
     return NEUTRAL;
 }
 
-Gear RPMHandler::evaluateGearStability(Gear detectedGear, unsigned long currentTime) {
+Gear DriveshaftRPMHandler::evaluateGearStability(Gear detectedGear, unsigned long currentTime) {
     // If detected gear matches candidate, continue timing
     if (detectedGear == candidateGear) {
         // Check if gear has been stable long enough
@@ -128,7 +128,7 @@ Gear RPMHandler::evaluateGearStability(Gear detectedGear, unsigned long currentT
     return currentGear;
 }
 
-bool RPMHandler::isGearRatioValid(float actualRatio, Gear gear) {
+bool DriveshaftRPMHandler::isGearRatioValid(float actualRatio, Gear gear) {
     if (gear < REVERSE || gear > GEAR_3) {
         return false;
     }
@@ -139,7 +139,7 @@ bool RPMHandler::isGearRatioValid(float actualRatio, Gear gear) {
     return difference <= GEAR_RATIO_TOLERANCE;
 }
 
-int RPMHandler::calculateSpeedFromWheelRPM(float wheelRPM) {
+int DriveshaftRPMHandler::calculateSpeedFromWheelRPM(float wheelRPM) {
     if (wheelRPM <= 0) {
         return 0;
     }
@@ -157,7 +157,7 @@ int RPMHandler::calculateSpeedFromWheelRPM(float wheelRPM) {
     return (int)round(speedMPH);
 }
 
-float RPMHandler::calculateExpectedEngineRPM(Gear gear, float driveshaftRPM) {
+float DriveshaftRPMHandler::calculateExpectedEngineRPM(Gear gear, float driveshaftRPM) {
     if (gear == NEUTRAL || driveshaftRPM <= 0) {
         return 0.0f;
     }
@@ -165,14 +165,14 @@ float RPMHandler::calculateExpectedEngineRPM(Gear gear, float driveshaftRPM) {
     return driveshaftRPM * DIFFERENTIAL_RATIO * TRANSMISSION_RATIOS[gear];
 }
 
-float RPMHandler::getTransmissionRatio(Gear gear) const {
+float DriveshaftRPMHandler::getTransmissionRatio(Gear gear) const {
     if (gear >= REVERSE && gear <= GEAR_3) {
         return TRANSMISSION_RATIOS[gear];
     }
     return 1.0f;  // Default for invalid gear
 }
 
-void RPMHandler::printStatus() {
+void DriveshaftRPMHandler::printStatus() {
     Serial.println("=== RPM Handler Status ===");
     Serial.print("Current Gear: ");
     Serial.println(GEAR_NAMES[currentGear]);

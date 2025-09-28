@@ -1,12 +1,12 @@
-#ifndef RPM_HANDLER_H
-#define RPM_HANDLER_H
+#ifndef DRIVESHAFT_RPM_HANDLER_H
+#define DRIVESHAFT_RPM_HANDLER_H
 
 #include "config.h"
 #include "GearIndicator.h"
 #include "SpeedometerWheel.h"
 #include "DriveshaftMonitor.h"
 
-class RPMHandler {
+class DriveshaftRPMHandler {
 private:
     GearIndicator* gearIndicator;
     SpeedometerWheel* speedometer;
@@ -42,7 +42,7 @@ private:
     float calculateExpectedEngineRPM(Gear gear, float driveshaftRPM);
 
 public:
-    RPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, DriveshaftMonitor* driveshaft = nullptr);
+    DriveshaftRPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, DriveshaftMonitor* driveshaft = nullptr);
 
     // Main update method - call this regularly with current RPM values
     void update(float driveshaftRPM, float wheelRPM);
@@ -65,4 +65,4 @@ public:
     void printStatus();
 };
 
-#endif // RPM_HANDLER_H
+#endif // DRIVESHAFT_RPM_HANDLER_H

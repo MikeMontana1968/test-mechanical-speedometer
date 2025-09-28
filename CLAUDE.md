@@ -29,7 +29,7 @@ This file provides guidance to Claude Code when working with this ESP32 mechanic
 
 ## Architecture Notes
 
-- **RPMHandler**: Central controller that processes engine and driveshaft RPM to determine gear and speed
+- **DriveshaftRPMHandler**: Central controller that processes engine and driveshaft RPM to determine gear and speed
 - **GearIndicator**: Servo-controlled gear position display with smooth transitions
 - **SpeedometerWheel**: Stepper motor speedometer with optical endstop homing and smooth movement
 - All classes use update() methods for non-blocking operation in main loop

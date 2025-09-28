@@ -29,7 +29,7 @@ A realistic mechanical speedometer and gear indicator system for classic cars, b
 
 ### Core Classes
 
-#### `RPMHandler`
+#### `DriveshaftRPMHandler`
 Central controller that processes engine and driveshaft RPM inputs to determine:
 - Current vehicle speed (calculated from driveshaft RPM and tire specs)
 - Optimal gear selection (derived from RPM ratios)
@@ -85,13 +85,13 @@ Manages stepper motor speedometer:
 
 ### Basic Setup
 ```cpp
-#include "classes/RPMHandler.h"
+#include "classes/DriveshaftRPMHandler.h"
 #include "classes/GearIndicator.h"
 #include "classes/SpeedometerWheel.h"
 
 GearIndicator gearIndicator;
 SpeedometerWheel speedometer;
-RPMHandler rpmHandler(&gearIndicator, &speedometer);
+DriveshaftRPMHandler rpmHandler(&gearIndicator, &speedometer);
 
 void setup() {
     gearIndicator.begin();
@@ -152,8 +152,8 @@ pio device monitor --baud 115200
 
 ### Commit Log
 
-- **a5d2799** - Add RPMHandler class with gear stability detection and smooth transitions
-  - Created RPMHandler class with 1970 MGB transmission specifications
+- **a5d2799** - Add DriveshaftRPMHandler class with gear stability detection and smooth transitions
+  - Created DriveshaftRPMHandler class with 1970 MGB transmission specifications
   - Added gear stability timeout logic (750ms confirmation period)
   - Implemented smooth easing transitions for both gear indicator and speedometer
   - Updated constructor formatting to tab-indented one-per-line style
