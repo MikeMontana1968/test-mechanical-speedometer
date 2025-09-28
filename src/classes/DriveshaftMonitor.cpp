@@ -5,8 +5,9 @@ volatile unsigned long DriveshaftMonitor::pulseCount = 0;
 volatile unsigned long DriveshaftMonitor::lastPulseTime = 0;
 DriveshaftMonitor* DriveshaftMonitor::instance = nullptr;
 
-DriveshaftMonitor::DriveshaftMonitor()
-	: lastCalculationTime(0),
+DriveshaftMonitor::DriveshaftMonitor(uint8_t pin)
+	: gpioPin(pin),
+	  lastCalculationTime(0),
 	  currentRPM(0.0f),
 	  lastPulseCountSnapshot(0),
 	  enabled(true) {  // Start enabled for testing/debug
@@ -14,7 +15,7 @@ DriveshaftMonitor::DriveshaftMonitor()
 }
 
 void DriveshaftMonitor::begin() {
-    pinMode(DRIVESHAFT_SENSOR_PIN, INPUT_PULLUP);
+    pinMode(gpioPin, INPUT_PULLUP);
 
     // Initialize all counters before enabling interrupt
     unsigned long currentTime = millis();
@@ -25,11 +26,11 @@ void DriveshaftMonitor::begin() {
     lastPulseCountSnapshot = 0;
 
     // Enable interrupt after initialization
-    attachInterrupt(digitalPinToInterrupt(DRIVESHAFT_SENSOR_PIN),
+    attachInterrupt(digitalPinToInterrupt(gpioPin),
                    handleInterrupt,
                    FALLING);
 
-    Serial.println("DriveshaftMonitor: Initialized on GPIO " + String(DRIVESHAFT_SENSOR_PIN));
+    Serial.println("DriveshaftMonitor: Initialized on GPIO " + String(gpioPin));
 }
 
 void DriveshaftMonitor::handleInterrupt() {

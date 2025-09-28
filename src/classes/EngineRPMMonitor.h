@@ -1,6 +1,7 @@
 #ifndef ENGINE_RPM_MONITOR_H
 #define ENGINE_RPM_MONITOR_H
 
+#include <Arduino.h>
 #include "config.h"
 
 class EngineRPMMonitor {
@@ -9,6 +10,7 @@ private:
     static volatile unsigned long lastPulseTime;
     static EngineRPMMonitor* instance;
 
+    uint8_t gpioPin;
     unsigned long lastCalculationTime;
     float currentRPM;
     unsigned long lastPulseCountSnapshot;
@@ -23,7 +25,7 @@ private:
     static void handleInterrupt();
 
 public:
-    EngineRPMMonitor();
+    EngineRPMMonitor(uint8_t pin);
 
     void begin();
     void update();

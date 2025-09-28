@@ -5,8 +5,9 @@ volatile unsigned long EngineRPMMonitor::pulseCount = 0;
 volatile unsigned long EngineRPMMonitor::lastPulseTime = 0;
 EngineRPMMonitor* EngineRPMMonitor::instance = nullptr;
 
-EngineRPMMonitor::EngineRPMMonitor()
-	: lastCalculationTime(0),
+EngineRPMMonitor::EngineRPMMonitor(uint8_t pin)
+	: gpioPin(pin),
+	  lastCalculationTime(0),
 	  currentRPM(0.0f),
 	  lastPulseCountSnapshot(0),
 	  enabled(true) {  // Start enabled for testing/debug
@@ -14,7 +15,7 @@ EngineRPMMonitor::EngineRPMMonitor()
 }
 
 void EngineRPMMonitor::begin() {
-    pinMode(ENGINE_RPM_SENSOR_PIN, INPUT_PULLUP);
+    pinMode(gpioPin, INPUT_PULLUP);
 
     // Initialize all counters before enabling interrupt
     unsigned long currentTime = millis();
@@ -25,11 +26,11 @@ void EngineRPMMonitor::begin() {
     lastPulseCountSnapshot = 0;
 
     // Enable interrupt after initialization
-    attachInterrupt(digitalPinToInterrupt(ENGINE_RPM_SENSOR_PIN),
+    attachInterrupt(digitalPinToInterrupt(gpioPin),
                    handleInterrupt,
                    FALLING);
 
-    Serial.println("EngineRPMMonitor: Initialized on GPIO " + String(ENGINE_RPM_SENSOR_PIN));
+    Serial.println("EngineRPMMonitor: Initialized on GPIO " + String(gpioPin));
 }
 
 void EngineRPMMonitor::handleInterrupt() {

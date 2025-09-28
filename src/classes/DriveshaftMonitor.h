@@ -1,6 +1,7 @@
 #ifndef DRIVESHAFT_MONITOR_H
 #define DRIVESHAFT_MONITOR_H
 
+#include <Arduino.h>
 #include "config.h"
 
 class DriveshaftMonitor {
@@ -9,6 +10,7 @@ private:
     static volatile unsigned long lastPulseTime;
     static DriveshaftMonitor* instance;
 
+    uint8_t gpioPin;
     unsigned long lastCalculationTime;
     float currentRPM;
     unsigned long lastPulseCountSnapshot;
@@ -23,7 +25,7 @@ private:
     static void handleInterrupt();
 
 public:
-    DriveshaftMonitor();
+    DriveshaftMonitor(uint8_t pin);
 
     void begin();
     void update();

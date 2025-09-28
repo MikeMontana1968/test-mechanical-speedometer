@@ -11,8 +11,8 @@
 GearIndicator gearIndicator;
 SpeedometerWheel speedometer;
 DisplayManager displayManager;
-DriveshaftMonitor driveshaftMonitor;
-EngineRPMMonitor engineRPMMonitor;
+DriveshaftMonitor driveshaftMonitor(DRIVESHAFT_SENSOR_PIN);
+EngineRPMMonitor engineRPMMonitor(ENGINE_RPM_SENSOR_PIN);
 DriveshaftRPMHandler rpmHandler(&gearIndicator, &speedometer, &driveshaftMonitor);
 
 void setup() {
