@@ -6,11 +6,13 @@
 #include "classes/DriveshaftRPMHandler.h"
 #include "classes/DisplayManager.h"
 #include "classes/DriveshaftMonitor.h"
+#include "classes/EngineRPMMonitor.h"
 
 GearIndicator gearIndicator;
 SpeedometerWheel speedometer;
 DisplayManager displayManager;
 DriveshaftMonitor driveshaftMonitor;
+EngineRPMMonitor engineRPMMonitor;
 DriveshaftRPMHandler rpmHandler(&gearIndicator, &speedometer, &driveshaftMonitor);
 
 void setup() {
@@ -28,9 +30,11 @@ void setup() {
   gearIndicator.begin();
   speedometer.begin();
   driveshaftMonitor.begin();
+  engineRPMMonitor.begin();
 
-  // Enable driveshaft monitor for testing
+  // Enable monitors for testing
   driveshaftMonitor.setEnabled(true);
+  engineRPMMonitor.setEnabled(true);
 
   // Test servo output immediately after initialization
 
