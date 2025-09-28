@@ -2,12 +2,12 @@
 #define VERSION_H
 
 // Semantic Versioning (MAJOR.MINOR.PATCH)
-#define VERSION_MAJOR 1
-#define VERSION_MINOR 3
+#define VERSION_MAJOR 2
+#define VERSION_MINOR 1
 #define VERSION_PATCH 0
 
 // Build version string
-#define VERSION_STRING "1.3.0"
+#define VERSION_STRING "2.1.0"
 
 // Helper macros for version operations
 #define MAKE_VERSION_STRING(major, minor, patch) #major "." #minor "." #patch
