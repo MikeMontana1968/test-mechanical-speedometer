@@ -101,11 +101,11 @@ void setup() {
 
 void loop() {
     // Get RPM readings from your sensors
-    float engineRPM = readEngineRPM();
     float driveshaftRPM = readDriveshaftRPM();
+    float wheelRPM = readWheelRPM();
 
     // Update system with current RPM values
-    rpmHandler.update(engineRPM, driveshaftRPM);
+    rpmHandler.update(driveshaftRPM, wheelRPM);
 
     // Maintain smooth transitions
     gearIndicator.update();

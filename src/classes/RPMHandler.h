@@ -21,8 +21,8 @@ private:
     Gear currentGear;
     Gear candidateGear;          // Gear being evaluated for stability
     int currentSpeed;
-    float lastEngineRPM;
     float lastDriveshaftRPM;
+    float lastWheelRPM;
 
     // Gear stability tracking
     static const unsigned long GEAR_STABILITY_TIMEOUT_MS = 750;  // Time to confirm gear
@@ -35,20 +35,20 @@ private:
     static constexpr float MINUTES_PER_HOUR = 60.0f;
 
     // Helper methods
-    Gear calculateOptimalGear(float engineRPM, float driveshaftRPM);
+    Gear calculateOptimalGear(float driveshaftRPM, float wheelRPM);
     Gear evaluateGearStability(Gear detectedGear, unsigned long currentTime);
     bool isGearRatioValid(float actualRatio, Gear gear);
-    int calculateSpeedFromDriveshaftRPM(float driveshaftRPM);
+    int calculateSpeedFromWheelRPM(float wheelRPM);
     float calculateExpectedEngineRPM(Gear gear, float driveshaftRPM);
 
 public:
     RPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, DriveshaftMonitor* driveshaft = nullptr);
 
     // Main update method - call this regularly with current RPM values
-    void update(float engineRPM, float driveshaftRPM);
+    void update(float driveshaftRPM, float wheelRPM);
 
     // Overloaded update method that uses DriveshaftMonitor for automatic driveshaft RPM
-    void update(float engineRPM);
+    void update(float driveshaftRPM);
 
     // Configuration methods
     void setDifferentialRatio(float ratio) { /* Not implemented - const for MGB */ }

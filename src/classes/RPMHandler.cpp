@@ -17,22 +17,22 @@ RPMHandler::RPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, Drivesh
 	  currentGear(NEUTRAL),
 	  candidateGear(NEUTRAL),
 	  currentSpeed(0),
-	  lastEngineRPM(0.0f),
 	  lastDriveshaftRPM(0.0f),
+	  lastWheelRPM(0.0f),
 	  lastValidGearTime(0),
 	  candidateGearStartTime(0) {
 }
 
-void RPMHandler::update(float engineRPM, float driveshaftRPM) {
-    lastEngineRPM = engineRPM;
+void RPMHandler::update(float driveshaftRPM, float wheelRPM) {
     lastDriveshaftRPM = driveshaftRPM;
+    lastWheelRPM = wheelRPM;
     unsigned long currentTime = millis();
 
-    // Calculate speed from driveshaft RPM
-    int newSpeed = calculateSpeedFromDriveshaftRPM(driveshaftRPM);
+    // Calculate speed from wheel RPM
+    int newSpeed = calculateSpeedFromWheelRPM(wheelRPM);
 
     // Detect potential gear based on RPM ratios
-    Gear detectedGear = calculateOptimalGear(engineRPM, driveshaftRPM);
+    Gear detectedGear = calculateOptimalGear(driveshaftRPM, wheelRPM);
 
     // Evaluate gear stability with timing logic
     Gear confirmedGear = evaluateGearStability(detectedGear, currentTime);
@@ -56,36 +56,39 @@ void RPMHandler::update(float engineRPM, float driveshaftRPM) {
         Serial.print(GEAR_NAMES[currentGear]);
         Serial.print(" at ");
         Serial.print(currentSpeed);
-        Serial.print(" MPH (Engine: ");
-        Serial.print(engineRPM);
-        Serial.print(" RPM, Driveshaft: ");
+        Serial.print(" MPH (Driveshaft: ");
         Serial.print(driveshaftRPM);
+        Serial.print(" RPM, Wheel: ");
+        Serial.print(wheelRPM);
         Serial.println(" RPM)");
     }
 }
 
-void RPMHandler::update(float engineRPM) {
-    // Use DriveshaftMonitor for automatic driveshaft RPM reading
+void RPMHandler::update(float driveshaftRPM) {
+    // Use DriveshaftMonitor for automatic wheel RPM reading (or calculate from driveshaft)
     if (driveshaftMonitor) {
-        float driveshaftRPM = driveshaftMonitor->getRPM();
-        update(engineRPM, driveshaftRPM);
+        float monitoredRPM = driveshaftMonitor->getRPM();
+        // Calculate wheel RPM from driveshaft RPM
+        float wheelRPM = monitoredRPM / DIFFERENTIAL_RATIO;
+        update(driveshaftRPM, wheelRPM);
     } else {
-        // Fallback: use last known driveshaft RPM
-        update(engineRPM, lastDriveshaftRPM);
+        // Fallback: calculate wheel RPM from provided driveshaft RPM
+        float wheelRPM = driveshaftRPM / DIFFERENTIAL_RATIO;
+        update(driveshaftRPM, wheelRPM);
     }
 }
 
-Gear RPMHandler::calculateOptimalGear(float engineRPM, float driveshaftRPM) {
+Gear RPMHandler::calculateOptimalGear(float driveshaftRPM, float wheelRPM) {
     // Handle special cases - low RPM indicates neutral or stopped
-    if (engineRPM < 100.0f || abs(driveshaftRPM) < 10.0f) {
+    if (driveshaftRPM < 100.0f || abs(wheelRPM) < 10.0f) {
         return NEUTRAL;
     }
 
     // Calculate actual transmission ratio from RPM readings
-    float actualRatio = engineRPM / (abs(driveshaftRPM) * DIFFERENTIAL_RATIO);
+    float actualRatio = driveshaftRPM / abs(wheelRPM);
 
-    // Check reverse gear (if driveshaft is negative)
-    if (driveshaftRPM < 0 && isGearRatioValid(actualRatio, REVERSE)) {
+    // Check reverse gear (if wheel is negative)
+    if (wheelRPM < 0 && isGearRatioValid(actualRatio, REVERSE)) {
         return REVERSE;
     }
 
@@ -136,13 +139,13 @@ bool RPMHandler::isGearRatioValid(float actualRatio, Gear gear) {
     return difference <= GEAR_RATIO_TOLERANCE;
 }
 
-int RPMHandler::calculateSpeedFromDriveshaftRPM(float driveshaftRPM) {
-    if (driveshaftRPM <= 0) {
+int RPMHandler::calculateSpeedFromWheelRPM(float wheelRPM) {
+    if (wheelRPM <= 0) {
         return 0;
     }
 
-    // Calculate wheel RPM from driveshaft RPM
-    float wheelRPM = driveshaftRPM / DIFFERENTIAL_RATIO;
+    // Use wheel RPM directly (no conversion needed)
+    // float wheelRPM = wheelRPM;  // Already provided as parameter
 
     // Calculate tire circumference in inches
     float tireCircumference = PI * TIRE_DIAMETER_INCHES;
@@ -176,10 +179,10 @@ void RPMHandler::printStatus() {
     Serial.print("Current Speed: ");
     Serial.print(currentSpeed);
     Serial.println(" MPH");
-    Serial.print("Engine RPM: ");
-    Serial.println(lastEngineRPM);
     Serial.print("Driveshaft RPM: ");
     Serial.println(lastDriveshaftRPM);
+    Serial.print("Wheel RPM: ");
+    Serial.println(lastWheelRPM);
     Serial.print("Differential Ratio: ");
     Serial.println(DIFFERENTIAL_RATIO);
     Serial.print("Tire Diameter: ");
