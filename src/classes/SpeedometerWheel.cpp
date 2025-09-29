@@ -43,9 +43,6 @@ void SpeedometerWheel::begin() {
     Serial.println("Testing stepper motor movement...");
     testStepperMotor();
 
-    // Run simple GPIO test for hardware verification
-    Serial.println("\nRunning GPIO pin verification test...");
-    simpleGPIOTest();
 
     // Run manual stepper test to verify motor operation
     Serial.println("\nRunning manual stepper motor test...");
@@ -412,24 +409,53 @@ void SpeedometerWheel::testStepperMotor() {
 
 void SpeedometerWheel::continuousStepperTest() {
     Serial.println("\n=== CONTINUOUS STEPPER & SENSOR TEST ===");
-    Serial.println("This will continuously rotate the stepper and monitor sensor changes.");
+    Serial.println("Using manual 28BYJ-48 step sequence for reliable rotation.");
     Serial.println("Watch for sensor state transitions as the wheel rotates.");
     Serial.println("Send any character via serial to stop the test.\n");
 
+    // Set all pins as outputs
+    pinMode(STEPPER_PIN_1, OUTPUT);
+    pinMode(STEPPER_PIN_2, OUTPUT);
+    pinMode(STEPPER_PIN_3, OUTPUT);
+    pinMode(STEPPER_PIN_4, OUTPUT);
+
+    // 28BYJ-48 step sequence (full step mode)
+    int stepSequence[4][4] = {
+        {1, 0, 0, 1},  // Step 1
+        {1, 1, 0, 0},  // Step 2
+        {0, 1, 1, 0},  // Step 3
+        {0, 0, 1, 1}   // Step 4
+    };
+
     bool lastSensorState = readEndstop();
     int stepCount = 0;
+    currentPosition = 0;
 
     Serial.print("Starting sensor state: ");
     Serial.println(lastSensorState ? "TRIGGERED" : "OPEN");
-    Serial.println("Rotating stepper motor clockwise...\n");
+    Serial.println("Rotating stepper motor clockwise with 200ms step timing + power saving...\n");
 
     while (true) {
-        // Take one step
-        stepper.step(1);
+        // Get current step in sequence
+        int currentStep = stepCount % 4;
+
+        // Apply the step pattern
+        digitalWrite(STEPPER_PIN_1, stepSequence[currentStep][0]);
+        digitalWrite(STEPPER_PIN_2, stepSequence[currentStep][1]);
+        digitalWrite(STEPPER_PIN_3, stepSequence[currentStep][2]);
+        digitalWrite(STEPPER_PIN_4, stepSequence[currentStep][3]);
+
+        // Hold pattern for 50ms, then turn off coils to save power
+        delay(50);
+        digitalWrite(STEPPER_PIN_1, 0);
+        digitalWrite(STEPPER_PIN_2, 0);
+        digitalWrite(STEPPER_PIN_3, 0);
+        digitalWrite(STEPPER_PIN_4, 0);
+
         stepCount++;
         currentPosition++;
 
-        // Wrap position
+        // Wrap position at full revolution
         if (currentPosition >= STEPS_PER_REVOLUTION) {
             currentPosition = 0;
         }
@@ -458,7 +484,12 @@ void SpeedometerWheel::continuousStepperTest() {
             Serial.print(" - Position: ");
             Serial.print(currentPosition);
             Serial.print(" - Sensor: ");
-            Serial.println(currentSensorState ? "TRIGGERED" : "OPEN");
+            Serial.print(currentSensorState ? "TRIGGERED" : "OPEN");
+            Serial.print(" - Pattern: ");
+            Serial.print(stepSequence[currentStep][0]);
+            Serial.print(stepSequence[currentStep][1]);
+            Serial.print(stepSequence[currentStep][2]);
+            Serial.println(stepSequence[currentStep][3]);
         }
 
         // Check for serial input to stop
@@ -468,8 +499,14 @@ void SpeedometerWheel::continuousStepperTest() {
             break;
         }
 
-        delay(10);  // 50ms between steps for easier observation
+        delay(150);  // Additional 150ms rest (total 200ms per step)
     }
+
+    // Turn off all pins
+    digitalWrite(STEPPER_PIN_1, 0);
+    digitalWrite(STEPPER_PIN_2, 0);
+    digitalWrite(STEPPER_PIN_3, 0);
+    digitalWrite(STEPPER_PIN_4, 0);
 
     Serial.println("=== CONTINUOUS TEST COMPLETE ===");
     Serial.print("Total steps taken: ");
@@ -533,59 +570,6 @@ void SpeedometerWheel::alternativeStepperTest() {
     Serial.println("- ULN2003 to 28BYJ-48 connection");
 }
 
-void SpeedometerWheel::simpleGPIOTest() {
-    Serial.println("=== SIMPLE GPIO PIN TEST ===");
-    Serial.println("This test slowly blinks each stepper pin individually.");
-    Serial.println("Use multimeter or connect LEDs to verify pin operation:");
-    Serial.println("- GPIO 25 (IN1): Connect LED + resistor to see blinking");
-    Serial.println("- GPIO 26 (IN2): Connect LED + resistor to see blinking");
-    Serial.println("- GPIO 27 (IN3): Connect LED + resistor to see blinking");
-    Serial.println("- GPIO 32 (IN4): Connect LED + resistor to see blinking");
-    Serial.println("Each pin will blink 5 times with 1-second intervals.\n");
-
-    // Set all pins as outputs
-    pinMode(STEPPER_PIN_1, OUTPUT);
-    pinMode(STEPPER_PIN_2, OUTPUT);
-    pinMode(STEPPER_PIN_3, OUTPUT);
-    pinMode(STEPPER_PIN_4, OUTPUT);
-
-    // Test each pin individually
-    int pins[] = {STEPPER_PIN_1, STEPPER_PIN_2, STEPPER_PIN_3, STEPPER_PIN_4};
-    String pinNames[] = {"GPIO 25 (IN1)", "GPIO 26 (IN2)", "GPIO 27 (IN3)", "GPIO 32 (IN4)"};
-
-    for (int pinIndex = 0; pinIndex < 4; pinIndex++) {
-        Serial.println("Testing " + pinNames[pinIndex] + "...");
-
-        for (int blink = 0; blink < 5; blink++) {
-            digitalWrite(pins[pinIndex], HIGH);
-            Serial.print("  Blink ");
-            Serial.print(blink + 1);
-            Serial.println(" - HIGH (3.3V)");
-            delay(1000);
-
-            digitalWrite(pins[pinIndex], LOW);
-            Serial.println("    - LOW (0V)");
-            delay(1000);
-        }
-
-        Serial.println("  " + pinNames[pinIndex] + " test complete.\n");
-        delay(500);
-    }
-
-    // Ensure all pins are LOW when done
-    for (int i = 0; i < 4; i++) {
-        digitalWrite(pins[i], LOW);
-    }
-
-    Serial.println("=== GPIO TEST COMPLETE ===");
-    Serial.println("If you measured voltage changes or saw LED blinking:");
-    Serial.println("✓ ESP32 GPIO pins are working");
-    Serial.println("✓ Pin connections to ULN2003 should be verified");
-    Serial.println("\nIf NO voltage changes or LED activity:");
-    Serial.println("✗ Check ESP32 power supply");
-    Serial.println("✗ Check GPIO pin connections");
-    Serial.println("✗ Try different GPIO pins if available");
-}
 
 void SpeedometerWheel::manualStepperTest() {
     Serial.println("=== MANUAL STEPPER CONTROL TEST ===");

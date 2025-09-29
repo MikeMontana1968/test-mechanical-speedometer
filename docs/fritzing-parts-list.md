@@ -46,6 +46,10 @@ To create the actual Fritzing diagram for this project, use these components and
 | Sensor | Signal | ESP32 | GPIO 18 | Gray |
 | Sensor | VCC | ESP32 | 3.3V | Red |
 | Sensor | GND | ESP32 | GND | Black |
+| **Engine RPM Sensor** | | | | |
+| Sensor | Signal | ESP32 | GPIO 4 | Blue |
+| Sensor | VCC | ESP32 | 3.3V | Red |
+| Sensor | GND | ESP32 | GND | Black |
 
 ### Fritzing Diagram Layout
 
@@ -71,6 +75,7 @@ Signal Routing:
 - GPIO 25,26,27,32: Digital outputs to stepper driver
 - GPIO 5: Digital input from optical endstop (pulled up)
 - GPIO 18: Digital input from driveshaft sensor (pulled up)
+- GPIO 4: Digital input from engine RPM sensor (pulled up)
 ```
 
 #### PCB View

@@ -36,14 +36,9 @@ void setup() {
   driveshaftMonitor.setEnabled(true);
   engineRPMMonitor.setEnabled(true);
 
-  // Test servo output immediately after initialization
-
-  // Demo sequence: calibrate speedometer, then run demo
-  delay(2000);
-
-  Serial.println("Starting continuous stepper test to verify sensor...");
-  displayManager.showCalibrationScreen("Stepper Test");
-  speedometer.continuousStepperTest();
+  // Serial.println("Starting continuous stepper test to verify sensor...");
+  // displayManager.showCalibrationScreen("Stepper Test");
+  // speedometer.continuousStepperTest();
 
   // Serial.println("Calibrating speedometer...");
   // displayManager.showCalibrationScreen("Calibrating...");
@@ -76,7 +71,5 @@ int demoStep = 0;
 bool demoMode = true;  // Enable demo mode when no driveshaft signal
 
 void loop() {
-  // Minimal loop during continuous stepper test
-  // The continuous test runs in setup() and handles its own loop
-  delay(1000);
+  delay(100);
 }

@@ -45,6 +45,10 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
 | Signal | GPIO 18 | Digital Input | Driveshaft RPM measurement |
 | VCC | 3.3V | Power | ESP32 3.3V output |
 | GND | GND | Ground | ESP32 ground |
+| **Engine RPM Sensor** | | | |
+| Signal | GPIO 4 | Digital Input | Engine RPM measurement |
+| VCC | 3.3V | Power | ESP32 3.3V output |
+| GND | GND | Ground | ESP32 ground |
 
 ## Wiring Diagram (ASCII)
 
@@ -59,6 +63,7 @@ This document provides complete wiring instructions for the ESP32 mechanical spe
    │          ┌────┤ GPIO 22 (SCL)          │
    │          │ ┌──┤ (No RST pin)           │
    │          │ │  │                        │
+   │          │ │  │ GPIO 4  ├──────────────┼─── Engine RPM Sensor Signal
    │          │ │  │ GPIO 18 ├──────────────┼─── Driveshaft Sensor Signal
    │          │ │  │ GPIO 19 ├──────────────┼─── Servo Signal (Orange)
    │          │ │  │ GPIO 25 ├──────────────┼─── Stepper IN1
@@ -213,6 +218,14 @@ Driveshaft Sensor → ESP32:
 
 Function: Measures driveshaft RPM for gear detection and speed calculation
 └── LOW signal when beam is blocked by driveshaft rotation marker
+
+Engine RPM Sensor → ESP32:
+├── Signal → GPIO 4 (with internal pull-up)
+├── VCC    → 3.3V output pin
+└── GND    → Ground rail
+
+Function: Measures engine RPM for enhanced gear detection and performance analysis
+└── LOW signal when beam is blocked by engine rotation marker
 ```
 
 ### 5. OLED Display (External I2C)
