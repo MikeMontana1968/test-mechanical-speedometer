@@ -17,7 +17,8 @@
       "Bash(pio device:*)",
       "Bash(tasklist)",
       "Bash(git checkout:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []
