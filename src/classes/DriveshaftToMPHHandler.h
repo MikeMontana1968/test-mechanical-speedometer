@@ -1,16 +1,16 @@
-#ifndef DRIVESHAFT_RPM_HANDLER_H
-#define DRIVESHAFT_RPM_HANDLER_H
+#ifndef DRIVESHAFT_TO_MPH_HANDLER_H
+#define DRIVESHAFT_TO_MPH_HANDLER_H
 
 #include "config.h"
 #include "GearIndicator.h"
 #include "SpeedometerWheel.h"
-#include "DriveshaftMonitor.h"
+#include "DriveshaftInterruptHandler.h"
 
-class DriveshaftRPMHandler {
+class DriveshaftToMPHHandler {
 private:
     GearIndicator* gearIndicator;
     SpeedometerWheel* speedometer;
-    DriveshaftMonitor* driveshaftMonitor;
+    DriveshaftInterruptHandler* driveshaftMonitor;
 
     // 1970 MGB Three-speed manual transmission specifications
     static const float TRANSMISSION_RATIOS[5];  // Index 0=Reverse, 1=1st, 2=2nd, 3=3rd, 4=Not used
@@ -42,13 +42,13 @@ private:
     float calculateExpectedEngineRPM(Gear gear, float driveshaftRPM);
 
 public:
-    DriveshaftRPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, DriveshaftMonitor* driveshaft = nullptr);
+    DriveshaftToMPHHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, DriveshaftInterruptHandler* driveshaft = nullptr);
 
     // Main update method - call this regularly with current RPM values
-    void update(float driveshaftRPM, float wheelRPM);
+    float update(float driveshaftRPM, float wheelRPM);
 
-    // Overloaded update method that uses DriveshaftMonitor for automatic driveshaft RPM
-    void update(float driveshaftRPM);
+    // Overloaded update method that uses DriveshaftInterruptHandler for automatic driveshaft RPM
+    float update(float driveshaftRPM);
 
     // Configuration methods
     void setDifferentialRatio(float ratio) { /* Not implemented - const for MGB */ }
@@ -65,4 +65,4 @@ public:
     void printStatus();
 };
 
-#endif // DRIVESHAFT_RPM_HANDLER_H
+#endif // DRIVESHAFT_TO_MPH_HANDLER_H

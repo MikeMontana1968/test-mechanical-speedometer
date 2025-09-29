@@ -51,6 +51,7 @@ public:
     int getCurrentPosition() const { return (int)round(currentPositionFloat); }
     int getTargetPosition() const { return targetPosition; }
     int getCurrentMPH() const;
+    float getCurrentSpeedMPH() const;
     int getTargetMPH() const;
     int getHomeMarkerWidth() const { return homeMarkerWidth; }
     bool getCalibrationStatus() const { return isCalibrated; }

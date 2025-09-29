@@ -2,13 +2,39 @@
 
 A realistic mechanical speedometer and gear indicator system for classic cars, built with ESP32 and authentic automotive components. Designed specifically for a 1970 MGB with three-speed manual transmission.
 
+## Project Status
+
+✅ **Core System Implemented** (Version 2.0.0+)
+- Intelligent gear detection using engine RPM and vehicle speed analysis
+- Dual RPM monitoring (engine and driveshaft sensors)
+- Smooth servo and stepper motor control with cubic easing
+- Complete vehicle physics simulation with authentic 1970 MGB specifications
+- Gear stability filtering to prevent oscillation during shifts
+- Flexible GPIO configuration for all components
+
+🔧 **Hardware Integration Ready**
+- All classes accept GPIO pins in constructors
+- Comprehensive testing methods for motor and sensor validation
+- Non-blocking architecture for real-time operation
+- Built-in diagnostic and debugging capabilities
+
+📊 **Key Metrics**
+- **Gear Detection**: 750ms stability timeout with ±0.25 ratio tolerance
+- **Servo Transitions**: 800ms smooth cubic easing
+- **Stepper Transitions**: 1200ms smooth cubic easing
+- **Update Rate**: 10Hz main loop with interrupt-driven RPM sensing
+- **Speed Range**: 0-90 MPH with floating-point precision
+
 ## Features
 
-- **Realistic Gear Detection**: Analyzes engine and driveshaft RPM to intelligently determine current gear
-- **Smooth Transitions**: Servo and stepper motors use cubic easing for natural movement
-- **Stability Logic**: 750ms confirmation timeout prevents erratic display during gear shifts
-- **Authentic Specifications**: Uses actual 1970 MGB transmission ratios and tire specifications
-- **Non-blocking Architecture**: All components use update() methods for responsive operation
+- **Intelligent Gear Detection**: Automatically calculates gear based on engine RPM and vehicle speed using actual 1970 MGB transmission ratios
+- **Dual RPM Monitoring**: Separate engine and driveshaft RPM sensors for complete drivetrain simulation
+- **Smooth Transitions**: Servo and stepper motors use cubic easing for natural movement (800ms servo, 1200ms stepper)
+- **Gear Stability Filtering**: 750ms confirmation timeout prevents erratic display during gear shifts
+- **Authentic Vehicle Physics**: Uses actual tire diameter, differential ratio, and transmission ratios for realistic calculations
+- **Flexible GPIO Configuration**: All classes accept GPIO pins in constructors for hardware flexibility
+- **Comprehensive Speed Calculation**: Multiple precision levels (int and float) for different use cases
+- **Non-blocking Architecture**: All components use update() methods for responsive real-time operation
 
 ## Hardware Components
 
@@ -18,7 +44,8 @@ A realistic mechanical speedometer and gear indicator system for classic cars, b
 ### Motors & Sensors
 - **28BYJ-48 Stepper Motor** with ULN2003 driver board (speedometer needle)
 - **DM-S0020 Ultra-Micro Servo** (gear position indicator)
-- **Optical Endstop Sensors** with 1M cable for speedometer homing
+- **Optical Endstop Sensors** with 1M cable for speedometer homing and RPM measurement
+- **Dual RPM Sensors**: Separate optical sensors for engine and driveshaft RPM monitoring
 
 ### Vehicle Specifications (1970 MGB)
 - **Transmission Ratios**: R:3.44, 1st:3.44, 2nd:2.21, 3rd:1.37
@@ -29,24 +56,37 @@ A realistic mechanical speedometer and gear indicator system for classic cars, b
 
 ### Core Classes
 
-#### `DriveshaftRPMHandler`
+#### `DriveshaftToMPHHandler`
 Central controller that processes engine and driveshaft RPM inputs to determine:
 - Current vehicle speed (calculated from driveshaft RPM and tire specs)
 - Optimal gear selection (derived from RPM ratios)
 - Stability timeouts during gear changes
 
 #### `GearIndicator`
-Controls servo-driven gear position display:
-- Smooth 800ms cubic easing transitions
-- Positions: Reverse (0°), Neutral (15°), 1st (30°), 2nd (45°), 3rd (60°)
+Controls servo-driven gear position display with intelligent detection:
+- **Automatic Gear Detection**: Calculates gear from engine RPM and vehicle speed
+- **Vehicle Physics Integration**: Uses actual 1970 MGB transmission and differential ratios
+- **Gear Stability Logic**: 750ms confirmation prevents oscillation during shifts
+- **Smooth 800ms cubic easing transitions**
+- **Servo Positions**: Reverse (0°), Neutral (15°), 1st (30°), 2nd (45°), 3rd (60°)
+- **Configurable GPIO**: Accepts servo pin in constructor
 - Non-blocking update() method for main loop integration
 
 #### `SpeedometerWheel`
-Manages stepper motor speedometer:
-- Optical endstop homing for precise calibration
-- Smooth 1200ms cubic easing for speed changes
-- Speed range: 0-90 MPH with 2048 steps per revolution
-- Shortest-path rotation logic for efficient movement
+Manages stepper motor speedometer with precision control:
+- **Optical endstop homing** for precise calibration and zero positioning
+- **Smooth 1200ms cubic easing** for realistic speed changes
+- **Dual precision methods**: getCurrentMPH() (int) and getCurrentSpeedMPH() (float)
+- **Speed range**: 0-90 MPH with 2048 steps per revolution
+- **Shortest-path rotation** logic for efficient movement
+- **Comprehensive testing**: Built-in motor and sensor diagnostic methods
+
+#### `DriveshaftInterruptHandler` & `EngineRPMInterruptHandler`
+Handle RPM measurement from optical sensors:
+- **Interrupt-driven**: High-precision RPM calculation using hardware interrupts
+- **Configurable GPIO**: Accept sensor pins in constructors
+- **Filtering**: Built-in signal conditioning and noise reduction
+- **Real-time updates**: Continuous RPM monitoring for responsive gear detection
 
 ## Hardware Photos
 
@@ -64,68 +104,101 @@ Manages stepper motor speedometer:
 
 ```cpp
 // Servo Control
-#define SERVO_PIN 18          // PWM pin for gear indicator servo
+#define SERVO_PIN 19          // PWM pin for gear indicator servo
 
-// Stepper Motor Control
-#define STEPPER_PIN_1 19      // Stepper motor phase 1
-#define STEPPER_PIN_2 21      // Stepper motor phase 2
-#define STEPPER_PIN_3 22      // Stepper motor phase 3
-#define STEPPER_PIN_4 23      // Stepper motor phase 4
+// Stepper Motor Control (28BYJ-48 with ULN2003)
+#define STEPPER_PIN_1 25      // Stepper motor phase 1 (IN1)
+#define STEPPER_PIN_2 26      // Stepper motor phase 2 (IN2)
+#define STEPPER_PIN_3 27      // Stepper motor phase 3 (IN3)
+#define STEPPER_PIN_4 32      // Stepper motor phase 4 (IN4)
 
-// Sensors
+// Optical Sensors
 #define ENDSTOP_PIN 5         // Optical endstop for speedometer homing
+#define DRIVESHAFT_SENSOR_PIN 12  // Driveshaft RPM optical sensor
+#define ENGINE_RPM_SENSOR_PIN 13  // Engine RPM optical sensor
 
 // OLED Display (I2C)
-// I2C uses ESP32 default pins (SDA=21, SCL=22)
+// Uses ESP32 default I2C pins (SDA=21, SCL=22)
 // No explicit pin definitions needed - Wire library uses defaults
-// Software reset used (no hardware reset pin required)
 ```
 
 ## Usage
 
 ### Basic Setup
 ```cpp
-#include "classes/DriveshaftRPMHandler.h"
+#include "classes/DriveshaftToMPHHandler.h"
 #include "classes/GearIndicator.h"
 #include "classes/SpeedometerWheel.h"
+#include "classes/DriveshaftInterruptHandler.h"
+#include "classes/EngineRPMInterruptHandler.h"
 
-GearIndicator gearIndicator;
+// Initialize components with GPIO pins
+GearIndicator gearIndicator(SERVO_PIN);
 SpeedometerWheel speedometer;
-DriveshaftRPMHandler rpmHandler(&gearIndicator, &speedometer);
+DriveshaftInterruptHandler driveshaftMonitor(DRIVESHAFT_SENSOR_PIN);
+EngineRPMInterruptHandler engineRPMMonitor(ENGINE_RPM_SENSOR_PIN);
+DriveshaftToMPHHandler mphHandler(&gearIndicator, &speedometer, &driveshaftMonitor);
 
 void setup() {
+    Serial.begin(115200);
+
+    // Initialize all components
     gearIndicator.begin();
     speedometer.begin();
-    speedometer.calibrateHome();  // Calibrate speedometer on startup
+    driveshaftMonitor.begin();
+    engineRPMMonitor.begin();
+
+    // Enable RPM monitoring
+    driveshaftMonitor.setEnabled(true);
+    engineRPMMonitor.setEnabled(true);
+
+    // Optional: Calibrate speedometer on startup
+    // speedometer.calibrateHome();
 }
 
 void loop() {
-    // Get RPM readings from your sensors
-    float driveshaftRPM = readDriveshaftRPM();
-    float wheelRPM = readWheelRPM();
+    // Update RPM monitors
+    driveshaftMonitor.update();
+    engineRPMMonitor.update();
 
-    // Update system with current RPM values
-    rpmHandler.update(driveshaftRPM, wheelRPM);
+    // Get current readings
+    float driveshaftRPM = driveshaftMonitor.getRPM();
+    float engineRPM = engineRPMMonitor.getRPM();
+
+    // Update speed calculation
+    mphHandler.update(driveshaftRPM);
+    int speedMPH = mphHandler.getCurrentSpeed();
+
+    // Update gear based on engine RPM and speed
+    gearIndicator.updateGearFromRPM(engineRPM, speedMPH);
 
     // Maintain smooth transitions
     gearIndicator.update();
     speedometer.update();
 
-    delay(10);  // 100Hz update rate
+    delay(100);  // 10Hz update rate
 }
 ```
 
 ### Manual Control
 ```cpp
-// Direct gear control
+// Direct gear control (bypasses automatic detection)
 gearIndicator.setGear(GEAR_2);
 
 // Direct speed control
 speedometer.moveToMPH(45);
 
-// Check status
+// Get current readings
+float currentSpeedFloat = speedometer.getCurrentSpeedMPH();  // Floating point precision
+int currentSpeedInt = speedometer.getCurrentMPH();           // Integer precision
+Gear currentGear = gearIndicator.getCurrentGear();
+
+// Check transition status
 if (!gearIndicator.isInTransition()) {
     Serial.println("Gear change complete");
+}
+if (!speedometer.isInTransition()) {
+    Serial.println("Speed change complete");
 }
 ```
 
@@ -152,8 +225,8 @@ pio device monitor --baud 115200
 
 ### Commit Log
 
-- **a5d2799** - Add DriveshaftRPMHandler class with gear stability detection and smooth transitions
-  - Created DriveshaftRPMHandler class with 1970 MGB transmission specifications
+- **a5d2799** - Add DriveshaftToMPHHandler class with gear stability detection and smooth transitions
+  - Created DriveshaftToMPHHandler class with 1970 MGB transmission specifications
   - Added gear stability timeout logic (750ms confirmation period)
   - Implemented smooth easing transitions for both gear indicator and speedometer
   - Updated constructor formatting to tab-indented one-per-line style

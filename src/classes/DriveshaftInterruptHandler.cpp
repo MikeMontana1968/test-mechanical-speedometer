@@ -1,11 +1,11 @@
-#include "EngineRPMMonitor.h"
+#include "DriveshaftInterruptHandler.h"
 #include <Arduino.h>
 
-volatile unsigned long EngineRPMMonitor::pulseCount = 0;
-volatile unsigned long EngineRPMMonitor::lastPulseTime = 0;
-EngineRPMMonitor* EngineRPMMonitor::instance = nullptr;
+volatile unsigned long DriveshaftInterruptHandler::driveshaftPulseCount = 0;
+volatile unsigned long DriveshaftInterruptHandler::driveshaftLastPulseTime = 0;
+DriveshaftInterruptHandler* DriveshaftInterruptHandler::instance = nullptr;
 
-EngineRPMMonitor::EngineRPMMonitor(uint8_t pin)
+DriveshaftInterruptHandler::DriveshaftInterruptHandler(uint8_t pin)
 	: gpioPin(pin),
 	  lastCalculationTime(0),
 	  currentRPM(0.0f),
@@ -14,13 +14,13 @@ EngineRPMMonitor::EngineRPMMonitor(uint8_t pin)
     instance = this;
 }
 
-void EngineRPMMonitor::begin() {
+void DriveshaftInterruptHandler::begin() {
     pinMode(gpioPin, INPUT_PULLUP);
 
     // Initialize all counters before enabling interrupt
     unsigned long currentTime = millis();
-    pulseCount = 0;
-    lastPulseTime = currentTime;  // Initialize to current time to prevent false triggers
+    driveshaftPulseCount = 0;
+    driveshaftLastPulseTime = currentTime;  // Initialize to current time to prevent false triggers
     lastCalculationTime = currentTime;
     currentRPM = 0.0f;
     lastPulseCountSnapshot = 0;
@@ -30,10 +30,10 @@ void EngineRPMMonitor::begin() {
                    handleInterrupt,
                    FALLING);
 
-    Serial.println("EngineRPMMonitor: Initialized on GPIO " + String(gpioPin));
+    Serial.println("DriveshaftInterruptHandler: Initialized on GPIO " + String(gpioPin));
 }
 
-void EngineRPMMonitor::handleInterrupt() {
+void DriveshaftInterruptHandler::handleInterrupt() {
     // Only process interrupts if monitoring is enabled
     if (!instance || !instance->enabled) {
         return;
@@ -41,18 +41,17 @@ void EngineRPMMonitor::handleInterrupt() {
 
     unsigned long currentTime = millis();
 
-    // Debounce with 10ms minimum between pulses
-    if (currentTime - lastPulseTime > 10) {
-        pulseCount++;
-        lastPulseTime = currentTime;
+    if (currentTime - driveshaftLastPulseTime > 10) {
+        driveshaftPulseCount++;
+        driveshaftLastPulseTime = currentTime;
     }
 }
 
-void EngineRPMMonitor::update() {
+void DriveshaftInterruptHandler::update() {
     unsigned long currentTime = millis();
 
     if (currentTime - lastCalculationTime >= RPM_CALCULATION_INTERVAL_MS) {
-        unsigned long currentPulseCount = pulseCount;
+        unsigned long currentPulseCount = driveshaftPulseCount;
         unsigned long actualInterval = currentTime - lastCalculationTime;
 
         // Handle potential counter overflow/underflow
@@ -77,8 +76,7 @@ void EngineRPMMonitor::update() {
             } else {
                 currentRPM = pulsesPerMinute;
             }
-        } else if (currentTime - lastPulseTime > RPM_TIMEOUT_MS) {
-            // No pulses for timeout period - engine likely stopped
+        } else if (currentTime - driveshaftLastPulseTime > RPM_TIMEOUT_MS) {
             currentRPM = 0.0f;
         }
 
@@ -87,37 +85,37 @@ void EngineRPMMonitor::update() {
     }
 }
 
-bool EngineRPMMonitor::isReceivingSignal() const {
+bool DriveshaftInterruptHandler::isReceivingSignal() const {
     // Basic pulse detection - shows any recent interrupt activity (for debug)
-    return (millis() - lastPulseTime) < RPM_TIMEOUT_MS;
+    return (millis() - driveshaftLastPulseTime) < RPM_TIMEOUT_MS;
 }
 
-bool EngineRPMMonitor::isValidSignal() const {
+bool DriveshaftInterruptHandler::isValidSignal() const {
     // Filtered signal validation - requires stable RPM to be considered real
     // This filters out electrical noise that creates sporadic low-rate pulses
     return isReceivingSignal() && currentRPM >= MIN_STABLE_RPM;
 }
 
-void EngineRPMMonitor::reset() {
+void DriveshaftInterruptHandler::reset() {
     unsigned long currentTime = millis();
-    pulseCount = 0;
-    lastPulseTime = currentTime;  // Initialize to current time to prevent false triggers
+    driveshaftPulseCount = 0;
+    driveshaftLastPulseTime = currentTime;  // Initialize to current time to prevent false triggers
     currentRPM = 0.0f;
     lastPulseCountSnapshot = 0;
     lastCalculationTime = currentTime;
 }
 
-void EngineRPMMonitor::printStatus() {
-    Serial.println("=== EngineRPMMonitor Status ===");
+void DriveshaftInterruptHandler::printStatus() {
+    Serial.println("=== DriveshaftInterruptHandler Status ===");
     Serial.println("Current RPM: " + String(currentRPM, 1));
-    Serial.println("Total Pulses: " + String(pulseCount));
+    Serial.println("Total Pulses: " + String(driveshaftPulseCount));
     Serial.println("Signal Active: " + String(isReceivingSignal() ? "Yes" : "No"));
     Serial.println("Valid Signal: " + String(isValidSignal() ? "Yes" : "No"));
-    Serial.println("Last Pulse: " + String(millis() - lastPulseTime) + "ms ago");
+    Serial.println("Last Pulse: " + String(millis() - driveshaftLastPulseTime) + "ms ago");
     Serial.println("Enabled: " + String(enabled ? "Yes" : "No"));
 }
 
-void EngineRPMMonitor::setEnabled(bool enable) {
+void DriveshaftInterruptHandler::setEnabled(bool enable) {
     enabled = enable;
     if (!enable) {
         // When disabling, reset all counters to prevent stale readings

@@ -1,14 +1,14 @@
-#ifndef ENGINE_RPM_MONITOR_H
-#define ENGINE_RPM_MONITOR_H
+#ifndef ENGINE_RPM_INTERRUPT_HANDLER_H
+#define ENGINE_RPM_INTERRUPT_HANDLER_H
 
 #include <Arduino.h>
 #include "config.h"
 
-class EngineRPMMonitor {
+class EngineRPMInterruptHandler {
 private:
-    static volatile unsigned long pulseCount;
-    static volatile unsigned long lastPulseTime;
-    static EngineRPMMonitor* instance;
+    static volatile unsigned long enginePulseCount;
+    static volatile unsigned long engineLastPulseTime;
+    static EngineRPMInterruptHandler* instance;
 
     uint8_t gpioPin;
     unsigned long lastCalculationTime;
@@ -25,13 +25,13 @@ private:
     static void handleInterrupt();
 
 public:
-    EngineRPMMonitor(uint8_t pin);
+    EngineRPMInterruptHandler(uint8_t pin);
 
     void begin();
     void update();
 
     float getRPM() const { return currentRPM; }
-    unsigned long getPulseCount() const { return pulseCount; }
+    unsigned long getPulseCount() const { return enginePulseCount; }
     bool isReceivingSignal() const;        // Basic pulse detection (for debug)
     bool isValidSignal() const;            // Filtered signal validation (for control)
 
@@ -41,4 +41,4 @@ public:
     bool isEnabled() const { return enabled; }
 };
 
-#endif // ENGINE_RPM_MONITOR_H
+#endif // ENGINE_RPM_INTERRUPT_HANDLER_H

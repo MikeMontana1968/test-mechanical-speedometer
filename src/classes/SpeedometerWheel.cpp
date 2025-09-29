@@ -369,6 +369,28 @@ int SpeedometerWheel::getCurrentMPH() const {
     return constrain(stepsFromZero / STEPS_PER_MPH, MIN_SPEED_MPH, MAX_SPEED_MPH);
 }
 
+float SpeedometerWheel::getCurrentSpeedMPH() const {
+    if (!isCalibrated) {
+        return 0.0f;
+    }
+
+    int homeCenter = (homeStartPosition + homeMarkerWidth / 2) % STEPS_PER_REVOLUTION;
+    float currentPos = currentPositionFloat;
+    while (currentPos >= STEPS_PER_REVOLUTION) currentPos -= STEPS_PER_REVOLUTION;
+    while (currentPos < 0) currentPos += STEPS_PER_REVOLUTION;
+
+    float stepsFromHomeCenter = currentPos - homeCenter;
+    if (stepsFromHomeCenter > STEPS_PER_REVOLUTION / 2) {
+        stepsFromHomeCenter -= STEPS_PER_REVOLUTION;
+    } else if (stepsFromHomeCenter < -STEPS_PER_REVOLUTION / 2) {
+        stepsFromHomeCenter += STEPS_PER_REVOLUTION;
+    }
+
+    float stepsFromZero = stepsFromHomeCenter - ZERO_MPH_OFFSET;
+    float speedMPH = stepsFromZero / STEPS_PER_MPH;
+    return constrain(speedMPH, MIN_SPEED_MPH, MAX_SPEED_MPH);
+}
+
 int SpeedometerWheel::getTargetMPH() const {
     if (!isCalibrated) {
         return 0;

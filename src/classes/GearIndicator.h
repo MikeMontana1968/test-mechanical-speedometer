@@ -7,6 +7,7 @@
 class GearIndicator {
 private:
     Servo gearServo;
+    int servoPin;
     Gear currentGear;
     Gear targetGear;
     bool isInitialized;
@@ -23,12 +24,30 @@ private:
     float startAngle;
     float targetAngle;
 
+    // 1970 MGB vehicle specifications for gear calculation
+    static const float TRANSMISSION_RATIOS[5];  // Index 0=Reverse, 1=1st, 2=2nd, 3=3rd, 4=Not used
+    static constexpr float DIFFERENTIAL_RATIO = 3.9f;      // 1970 MGB differential ratio
+    static constexpr float TIRE_DIAMETER_INCHES = 23.0f;   // Approximate for 165-80R13 tires
+    static constexpr float GEAR_RATIO_TOLERANCE = 0.25f;   // Tolerance for gear detection
+    static constexpr float INCHES_PER_MILE = 63360.0f;
+    static constexpr float MINUTES_PER_HOUR = 60.0f;
+
+    // Gear stability tracking
+    static const unsigned long GEAR_STABILITY_TIMEOUT_MS = 750;  // Time to confirm gear change
+    Gear candidateGear;          // Gear being evaluated for stability
+    unsigned long candidateGearStartTime;
+    unsigned long lastValidGearTime;
+
     // Private helper methods
     float easeInOutCubic(float t);
     void updateServoPosition();
+    Gear calculateGearFromRPMRatio(float engineRPM, float speedMPH);
+    bool isGearRatioValid(float actualRatio, Gear gear);
+    Gear evaluateGearStability(Gear detectedGear, unsigned long currentTime);
+    float calculateExpectedEngineRPM(Gear gear, float speedMPH);
 
 public:
-    GearIndicator();
+    GearIndicator(int pin);
 
     // Initialization
     void begin();
@@ -39,6 +58,7 @@ public:
     // Gear control methods
     void setGear(Gear gear);
     void setGear(int gearIndex);
+    void updateGearFromRPM(float engineRPM, float speedMPH);  // Automatically detect and set gear
 
     // Getters
     Gear getCurrentGear() const { return currentGear; }

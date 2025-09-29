@@ -1,14 +1,14 @@
-#ifndef DRIVESHAFT_MONITOR_H
-#define DRIVESHAFT_MONITOR_H
+#ifndef DRIVESHAFT_INTERRUPT_HANDLER_H
+#define DRIVESHAFT_INTERRUPT_HANDLER_H
 
 #include <Arduino.h>
 #include "config.h"
 
-class DriveshaftMonitor {
+class DriveshaftInterruptHandler {
 private:
-    static volatile unsigned long pulseCount;
-    static volatile unsigned long lastPulseTime;
-    static DriveshaftMonitor* instance;
+    static volatile unsigned long driveshaftPulseCount;
+    static volatile unsigned long driveshaftLastPulseTime;
+    static DriveshaftInterruptHandler* instance;
 
     uint8_t gpioPin;
     unsigned long lastCalculationTime;
@@ -25,13 +25,13 @@ private:
     static void handleInterrupt();
 
 public:
-    DriveshaftMonitor(uint8_t pin);
+    DriveshaftInterruptHandler(uint8_t pin);
 
     void begin();
     void update();
 
     float getRPM() const { return currentRPM; }
-    unsigned long getPulseCount() const { return pulseCount; }
+    unsigned long getPulseCount() const { return driveshaftPulseCount; }
     bool isReceivingSignal() const;        // Basic pulse detection (for debug)
     bool isValidSignal() const;            // Filtered signal validation (for control)
 
@@ -41,4 +41,4 @@ public:
     bool isEnabled() const { return enabled; }
 };
 
-#endif // DRIVESHAFT_MONITOR_H
+#endif // DRIVESHAFT_INTERRUPT_HANDLER_H

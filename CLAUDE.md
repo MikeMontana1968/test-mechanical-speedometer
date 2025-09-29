@@ -29,7 +29,33 @@ This file provides guidance to Claude Code when working with this ESP32 mechanic
 
 ## Architecture Notes
 
-- **DriveshaftRPMHandler**: Central controller that processes engine and driveshaft RPM to determine gear and speed
-- **GearIndicator**: Servo-controlled gear position display with smooth transitions
+### Core Classes
+
+- **DriveshaftToMPHHandler**: Central controller that processes engine and driveshaft RPM to determine gear and speed
+- **GearIndicator**: Servo-controlled gear position display with smooth transitions and intelligent gear detection
 - **SpeedometerWheel**: Stepper motor speedometer with optical endstop homing and smooth movement
+- **DriveshaftInterruptHandler**: Handles driveshaft RPM measurement via optical sensor interrupts
+- **EngineRPMInterruptHandler**: Handles engine RPM measurement via optical sensor interrupts
+- **DisplayManager**: Manages OLED display output for system status and diagnostics
+
+### Key Features Implemented
+
+- **Intelligent Gear Detection**: GearIndicator now automatically calculates probable gear based on engine RPM and vehicle speed using actual 1970 MGB transmission ratios
+- **Gear Stability Filtering**: 750ms confirmation period prevents gear oscillation during shifts
+- **Smooth Servo Transitions**: Gear indicator uses easing functions for realistic mechanical movement
+- **GPIO Pin Configuration**: All classes accept GPIO pins in constructors for flexible hardware configuration
+- **Comprehensive Speed Calculation**: Multiple methods for speed calculation (getCurrentMPH() returns int, getCurrentSpeedMPH() returns float)
+- **Vehicle Physics Simulation**: Uses actual tire diameter, differential ratio, and transmission ratios for realistic calculations
+
+### Update Methods
+
 - All classes use update() methods for non-blocking operation in main loop
+- Main loop calls both gear calculation and servo update methods for complete functionality
+
+### Recent Updates (Version 2.0.0+)
+
+- Added automatic gear detection based on RPM ratio analysis
+- Enhanced GearIndicator with vehicle specifications and transmission logic
+- Implemented getCurrentSpeedMPH() method for floating-point speed precision
+- Updated constructor patterns to accept GPIO pins for all sensor classes
+- Integrated engine RPM monitoring for complete drivetrain simulation

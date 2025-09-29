@@ -3,17 +3,17 @@
 #include "version.h"
 #include "classes/SpeedometerWheel.h"
 #include "classes/GearIndicator.h"
-#include "classes/DriveshaftRPMHandler.h"
+#include "classes/DriveshaftToMPHHandler.h"
 #include "classes/DisplayManager.h"
-#include "classes/DriveshaftMonitor.h"
-#include "classes/EngineRPMMonitor.h"
+#include "classes/DriveshaftInterruptHandler.h"
+#include "classes/EngineRPMInterruptHandler.h"
 
-GearIndicator gearIndicator;
+GearIndicator gearIndicator(SERVO_PIN);
 SpeedometerWheel speedometer;
 DisplayManager displayManager;
-DriveshaftMonitor driveshaftMonitor(DRIVESHAFT_SENSOR_PIN);
-EngineRPMMonitor engineRPMMonitor(ENGINE_RPM_SENSOR_PIN);
-DriveshaftRPMHandler rpmHandler(&gearIndicator, &speedometer, &driveshaftMonitor);
+DriveshaftInterruptHandler driveshaftMonitor(DRIVESHAFT_SENSOR_PIN);
+EngineRPMInterruptHandler engineRPMMonitor(ENGINE_RPM_SENSOR_PIN);
+DriveshaftToMPHHandler mphHandler(&gearIndicator, &speedometer, &driveshaftMonitor);
 
 void setup() {
   Serial.begin(115200);
@@ -71,5 +71,41 @@ int demoStep = 0;
 bool demoMode = true;  // Enable demo mode when no driveshaft signal
 
 void loop() {
+  unsigned long currentTime = millis();
+
+  // Update both RPM monitors
+  driveshaftMonitor.update();
+  engineRPMMonitor.update();
+
+  // Debug output every 1 second
+  if (currentTime - lastRpmReport >= 1000) {
+    lastRpmReport = currentTime;
+
+    float driveshaftRPM = driveshaftMonitor.getRPM();
+    float engineRPM = engineRPMMonitor.getRPM();
+
+    mphHandler.update(driveshaftRPM);
+    engineRPMMonitor.update();
+    // Print debug information
+    int speedMPH = mphHandler.getCurrentSpeed();
+
+    // Update gear based on engine RPM and speed
+    gearIndicator.updateGearFromRPM(engineRPM, speedMPH);
+    gearIndicator.update();  // Handle servo smooth transitions
+    Gear currentGear = gearIndicator.getCurrentGear();
+
+    Serial.print("Driveshaft: ");
+    Serial.print(driveshaftRPM, 0);
+    Serial.print("rpm ");
+    Serial.print(speedMPH, 0);  
+    Serial.print("mph\tEngine: ");
+    Serial.print(engineRPM, 0);
+    Serial.print("rpm, \tRatio: ");
+    Serial.print(engineRPM/driveshaftRPM, 2);
+    Serial.print(":1 - \tGear: ");    
+    Serial.print(GEAR_NAMES[currentGear]);
+    Serial.println();
+  }
+
   delay(100);
 }

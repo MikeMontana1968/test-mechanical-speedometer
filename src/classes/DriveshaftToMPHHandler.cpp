@@ -1,8 +1,8 @@
-#include "DriveshaftRPMHandler.h"
+#include "DriveshaftToMPHHandler.h"
 #include <Arduino.h>
 
 // 1970 MGB Three-speed manual transmission ratios
-const float DriveshaftRPMHandler::TRANSMISSION_RATIOS[5] = {
+const float DriveshaftToMPHHandler::TRANSMISSION_RATIOS[5] = {
     3.44f,  // Reverse gear
     3.44f,  // 1st gear
     2.21f,  // 2nd gear
@@ -10,7 +10,7 @@ const float DriveshaftRPMHandler::TRANSMISSION_RATIOS[5] = {
     1.0f    // Not used (placeholder)
 };
 
-DriveshaftRPMHandler::DriveshaftRPMHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, DriveshaftMonitor* driveshaft)
+DriveshaftToMPHHandler::DriveshaftToMPHHandler(GearIndicator* gearInd, SpeedometerWheel* speedo, DriveshaftInterruptHandler* driveshaft)
 	: gearIndicator(gearInd),
 	  speedometer(speedo),
 	  driveshaftMonitor(driveshaft),
@@ -23,7 +23,7 @@ DriveshaftRPMHandler::DriveshaftRPMHandler(GearIndicator* gearInd, SpeedometerWh
 	  candidateGearStartTime(0) {
 }
 
-void DriveshaftRPMHandler::update(float driveshaftRPM, float wheelRPM) {
+float DriveshaftToMPHHandler::update(float driveshaftRPM, float wheelRPM) {
     lastDriveshaftRPM = driveshaftRPM;
     lastWheelRPM = wheelRPM;
     unsigned long currentTime = millis();
@@ -62,23 +62,25 @@ void DriveshaftRPMHandler::update(float driveshaftRPM, float wheelRPM) {
         Serial.print(wheelRPM);
         Serial.println(" RPM)");
     }
+
+    return (float)currentSpeed;
 }
 
-void DriveshaftRPMHandler::update(float driveshaftRPM) {
-    // Use DriveshaftMonitor for automatic wheel RPM reading (or calculate from driveshaft)
+float DriveshaftToMPHHandler::update(float driveshaftRPM) {
+    // Use DriveshaftInterruptHandler for automatic wheel RPM reading (or calculate from driveshaft)
     if (driveshaftMonitor) {
         float monitoredRPM = driveshaftMonitor->getRPM();
         // Calculate wheel RPM from driveshaft RPM
         float wheelRPM = monitoredRPM / DIFFERENTIAL_RATIO;
-        update(driveshaftRPM, wheelRPM);
+        return update(driveshaftRPM, wheelRPM);
     } else {
         // Fallback: calculate wheel RPM from provided driveshaft RPM
         float wheelRPM = driveshaftRPM / DIFFERENTIAL_RATIO;
-        update(driveshaftRPM, wheelRPM);
+        return update(driveshaftRPM, wheelRPM);
     }
 }
 
-Gear DriveshaftRPMHandler::calculateOptimalGear(float driveshaftRPM, float wheelRPM) {
+Gear DriveshaftToMPHHandler::calculateOptimalGear(float driveshaftRPM, float wheelRPM) {
     // Handle special cases - low RPM indicates neutral or stopped
     if (driveshaftRPM < 100.0f || abs(wheelRPM) < 10.0f) {
         return NEUTRAL;
@@ -103,7 +105,7 @@ Gear DriveshaftRPMHandler::calculateOptimalGear(float driveshaftRPM, float wheel
     return NEUTRAL;
 }
 
-Gear DriveshaftRPMHandler::evaluateGearStability(Gear detectedGear, unsigned long currentTime) {
+Gear DriveshaftToMPHHandler::evaluateGearStability(Gear detectedGear, unsigned long currentTime) {
     // If detected gear matches candidate, continue timing
     if (detectedGear == candidateGear) {
         // Check if gear has been stable long enough
@@ -128,7 +130,7 @@ Gear DriveshaftRPMHandler::evaluateGearStability(Gear detectedGear, unsigned lon
     return currentGear;
 }
 
-bool DriveshaftRPMHandler::isGearRatioValid(float actualRatio, Gear gear) {
+bool DriveshaftToMPHHandler::isGearRatioValid(float actualRatio, Gear gear) {
     if (gear < REVERSE || gear > GEAR_3) {
         return false;
     }
@@ -139,7 +141,7 @@ bool DriveshaftRPMHandler::isGearRatioValid(float actualRatio, Gear gear) {
     return difference <= GEAR_RATIO_TOLERANCE;
 }
 
-int DriveshaftRPMHandler::calculateSpeedFromWheelRPM(float wheelRPM) {
+int DriveshaftToMPHHandler::calculateSpeedFromWheelRPM(float wheelRPM) {
     if (wheelRPM <= 0) {
         return 0;
     }
@@ -152,12 +154,11 @@ int DriveshaftRPMHandler::calculateSpeedFromWheelRPM(float wheelRPM) {
 
     // Calculate speed in MPH
     // (wheel RPM) * (circumference in inches) * (minutes/hour) / (inches/mile)
-    float speedMPH = (wheelRPM * tireCircumference * MINUTES_PER_HOUR) / INCHES_PER_MILE;
-
+    float speedMPH = (wheelRPM * tireCircumference * 60) / 63360.0f;    
     return (int)round(speedMPH);
 }
 
-float DriveshaftRPMHandler::calculateExpectedEngineRPM(Gear gear, float driveshaftRPM) {
+float DriveshaftToMPHHandler::calculateExpectedEngineRPM(Gear gear, float driveshaftRPM) {
     if (gear == NEUTRAL || driveshaftRPM <= 0) {
         return 0.0f;
     }
@@ -165,15 +166,15 @@ float DriveshaftRPMHandler::calculateExpectedEngineRPM(Gear gear, float drivesha
     return driveshaftRPM * DIFFERENTIAL_RATIO * TRANSMISSION_RATIOS[gear];
 }
 
-float DriveshaftRPMHandler::getTransmissionRatio(Gear gear) const {
+float DriveshaftToMPHHandler::getTransmissionRatio(Gear gear) const {
     if (gear >= REVERSE && gear <= GEAR_3) {
         return TRANSMISSION_RATIOS[gear];
     }
     return 1.0f;  // Default for invalid gear
 }
 
-void DriveshaftRPMHandler::printStatus() {
-    Serial.println("=== RPM Handler Status ===");
+void DriveshaftToMPHHandler::printStatus() {
+    Serial.println("=== MPH Handler Status ===");
     Serial.print("Current Gear: ");
     Serial.println(GEAR_NAMES[currentGear]);
     Serial.print("Current Speed: ");
